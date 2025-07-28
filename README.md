@@ -1,1 +1,1 @@
-# HospitalManagementSystem
+# ExamManagementSystem

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Faculty Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f7f9;
+    }
+
+    .navbar {
+      background-color: #2c3e50;
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: relative;
+      z-index: 2000;
+    }
+
+    .navbar a,
+    .dropdown-btn {
+      color: white;
+      text-decoration: none;
+      padding: 0 20px;
+      display: inline-flex;
+      align-items: center;
+      font-weight: 500;
+      transition: background 0.3s, color 0.3s;
+      height: 56px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-size: 16px;
+      position: relative;
+      user-select: none;
+    }
+
+    .navbar a:hover,
+    .dropdown-btn:hover {
+      background-color: #1abc9c;
+      color: black; /* ✅ Fix: Change text color on hover */
+    }
+
+    .dropdown-btn img {
+      height: 40px;
+      width: auto;
+      margin-right: 8px;
+    }
+
+    .navbar .spacer {
+      flex-grow: 1;
+    }
+
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      top: 56px;
+      left: 0;
+      background-color: #f9f9f9;
+      min-width: 200px;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      border-radius: 6px;
+      z-index: 1000;
+      padding: 4px 0;
+    }
+
+    .dropdown-content a,
+    .dropdown-content button {
+      color: #333;
+      padding: 8px 16px;
+      display: block;
+      font-weight: 600;
+      background: none;
+      border: none;
+      text-align: left;
+      width: 100%;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .dropdown-content a:hover,
+    .dropdown-content button:hover {
+      background-color: #1abc9c;
+      color: black;
+    }
+
+    .show {
+      display: block;
+    }
+
+    .submenu {
+      position: absolute;
+      top: 0;
+      left: 100%;
+      background-color: #f9f9f9;
+      min-width: 260px;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      border-radius: 6px;
+      padding: 4px 0;
+      display: none;
+      z-index: 1001;
+    }
+
+    .submenu.show {
+      display: block;
+    }
+
+    .has-submenu::after {
+      content: "▶";
+      float: right;
+      font-size: 12px;
+      color: #666;
+      margin-left: 8px;
+    }
+
+    .submenu-btn {
+      color: #333;
+      padding: 8px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      background: none;
+      border: none;
+      text-align: left;
+      width: 100%;
+      cursor: pointer;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .submenu-btn:hover {
+      background-color: #1abc9c;
+      color: white;
+    }
+
+    .main {
+      padding: 40px;
+    }
+
+    .main h1 {
+      color: #2c3e50;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <div class="navbar">
+    <div class="dropdown">
+      <button class="dropdown-btn" id="homeBtn" aria-haspopup="true" aria-expanded="false" aria-label="Home Menu" tabindex="0">
+        <img src="https://www.freeiconspng.com/uploads/address-building-company-home-house-office-real-estate-icon--10.png" alt="Home Page" />
+      </button>
+      <div class="dropdown-content" id="homeDropdown" role="menu" aria-label="Home Menu">
+      </div>
+    </div>
+
+    <!-- Other navigation links -->
+    <a href="#">🏠 Dashboard</a>
+    <a href="#">🎓 My Courses</a>
+    <a href="#">📝 Create Test</a>
+    <a href="#">✏️ Modify Test</a>
+    <a href="#">🔄 Retest</a>
+    <a href="#">📊 View Result</a>
+    <a href="#">⏰ View Invigilator Duty</a>
+    <div class="spacer"></div>
+    <a href="#">👤 View Profile</a>
+    <a href="#">🚪 Logout</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <h1>Welcome to Faculty Dashboard</h1>
+    <div class="card">
+      <p>Use the navigation above to manage your tests and view student activity.</p>
+    </div>
+  </div>
+
+  <script>
+    const homeBtn = document.getElementById('homeBtn');
+    const homeDropdown = document.getElementById('homeDropdown');
+
+    homeBtn.addEventListener('click', function(event) {
+      event.stopPropagation();
+      const isExpanded = this.getAttribute('aria-expanded') === 'true';
+      if (isExpanded) {
+        homeDropdown.classList.remove('show');
+        this.setAttribute('aria-expanded', 'false');
+        closeAllSubmenus();
+      } else {
+        homeDropdown.classList.add('show');
+        this.setAttribute('aria-expanded', 'true');
+      }
+    });
+
+    window.addEventListener('click', function(event) {
+      if (!homeDropdown.contains(event.target) && !homeBtn.contains(event.target)) {
+        homeDropdown.classList.remove('show');
+        homeBtn.setAttribute('aria-expanded', 'false');
+        closeAllSubmenus();
+      }
+    });
+
+    function toggleSubmenu(buttonId, submenuId) {
+      const btn = document.getElementById(buttonId);
+      const submenu = document.getElementById(submenuId);
+
+      function toggle(event) {
+        event.stopPropagation();
+        const expanded = btn.getAttribute('aria-expanded') === 'true';
+        closeSiblings(btn, submenu.parentElement);
+        if (expanded) {
+          submenu.classList.remove('show');
+          btn.setAttribute('aria-expanded', 'false');
+        } else {
+          submenu.classList.add('show');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      }
+
+      btn.addEventListener('click', toggle);
+    }
+
+    function closeSiblings(currentBtn, parent) {
+      const buttons = parent.querySelectorAll('.has-submenu');
+      buttons.forEach(btn => {
+        if (btn !== currentBtn) {
+          const submenu = btn.nextElementSibling;
+          if (submenu && submenu.classList.contains('submenu')) {
+            submenu.classList.remove('show');
+            btn.setAttribute('aria-expanded', 'false');
+          }
+        }
+      });
+    }
+
+    function closeAllSubmenus() {
+      const submenus = document.querySelectorAll('.submenu');
+      submenus.forEach(menu => menu.classList.remove('show'));
+      const buttons = document.querySelectorAll('.has-submenu');
+      buttons.forEach(btn => btn.setAttribute('aria-expanded', 'false'));
+    }
+
+    // Initialize submenu toggles
+    toggleSubmenu('studentProgrammeBtn', 'studentProgrammeMenu');
+    toggleSubmenu('btechBtn', 'btechMenu');
+    toggleSubmenu('mtechBtn', 'mtechMenu');
+    toggleSubmenu('phdBtn', 'phdMenu');
+    toggleSubmenu('myCoursesBtn', 'myCoursesMenu'); // ✅ Added toggle for My Courses
+  </script>
+</body>
+</html>

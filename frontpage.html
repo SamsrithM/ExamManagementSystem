@@ -19,22 +19,7 @@
       flex-direction: column;
       align-items: center;
       padding: 20px;
-      padding-bottom: 60px; /* To avoid overlap with ticker */
-    }
-
-    .important-top {
-      max-width: 500px;
-      background-color: #ffeeba;
-      border: 1px solid #ffc107;
-      border-radius: 12px;
-      padding: 15px 20px;
-      font-size: 1.15rem;
-      font-weight: 700;
-      text-align: center;
-      color: #856404;
-      margin: 15px 0;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      font-family: 'Georgia', serif;
+      padding-bottom: 60px;
     }
 
     .container {
@@ -118,6 +103,19 @@
       color: white;
     }
 
+    .support-info {
+      margin: 30px 0;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #003366;
+      text-align: center;
+    }
+
+    .support-info a {
+      color: #1a73e8;
+      text-decoration: underline;
+    }
+
     footer {
       margin-top: 30px;
       font-size: 0.85rem;
@@ -125,35 +123,34 @@
       font-weight: 600;
     }
 
-    /* Smooth scrolling ticker */
+    /* Bottom scrolling ticker */
     .scrolling-wrapper {
       position: fixed;
       bottom: 0;
       left: 0;
       width: 100%;
       height: 40px;
-      background-color: #003366;
+      background-color: #ffeeba;
       overflow: hidden;
       z-index: 1000;
-      border-top: 2px solid #ffffff33;
+      border-top: 2px solid #ffc107;
     }
 
     .scrolling-content {
       display: inline-block;
       white-space: nowrap;
       padding-left: 100%;
-      animation: scrollText 30s linear infinite;
+      animation: scrollText 20s linear infinite;
     }
 
     .important-bottom {
       display: inline-block;
-      white-space: nowwrap;
+      white-space: nowrap;
       padding: 10px 0;
       font-size: 1rem;
       font-weight: bold;
-      color: #fff;
+      color: red;
       font-family: 'Georgia', serif;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
     }
 
     @keyframes scrollText {
@@ -171,9 +168,8 @@
         padding: 30px 20px;
       }
 
-      .important-top {
-        max-width: 90vw;
-        font-size: 1rem;
+      .support-info {
+        font-size: 0.95rem;
       }
 
       .important-bottom {
@@ -192,12 +188,7 @@
 </head>
 <body>
 
-  <!-- Top message -->
-  <div class="important-top">
-    ⚠️ Exam registration deadline: August 15, 2025. Please complete your registration on time!
-  </div>
-
-  <!-- Main content -->
+  <!-- Main Content -->
   <div class="container">
     <img src="https://upload.wikimedia.org/wikipedia/en/5/5f/Indian_Institute_of_Information_Technology_Design_and_Manufacturing%2C_Kurnool_logo.png" alt="Institution Logo" class="logo" />
 
@@ -205,21 +196,27 @@
     <p class="tagline">Efficiently managing exams and results</p>
 
     <div class="btn-group">
-      <button class="btn btn-admin">Admin Login</button>
-      <button class="btn btn-student">Student Login</button>
-      <button class="btn btn-faculty">Faculty Login</button>
+      <button class="btn btn-admin" onclick="location.href='adminlogin.html'">Admin Login</button>
+      <button class="btn btn-faculty" onclick="location.href='facultylogin.html'">Faculty Login</button>
+      <button class="btn btn-student" onclick="location.href='studentlogin.html'">Student Login</button>
+      <a href = "registration_page.html" class = "back-link">New Registration</a>
+    </div>
+
+    <!-- Static support info in the middle -->
+    <div class="support-info">
+      📢 For assistance, contact support at 
+      <a href="mailto:support@iiitdmk.ac.in">support@iiitdmk.ac.in</a><br />
+      📞 Helpdesk: +91-12345-67890
     </div>
 
     <footer>&copy; 2025 INDIAN INSTITUTE OF INFORMATION TECHNOLOGY DESIGN AND MANUFACTURING KURNOOL</footer>
   </div>
 
-  <!-- Scrolling ticker at bottom -->
+  <!-- Bottom scrolling ticker -->
   <div class="scrolling-wrapper">
     <div class="scrolling-content">
       <span class="important-bottom">
-        📢 For assistance, contact support at 
-        <a href="mailto:support@iiitdmk.ac.in" style="color: #ffd700; text-decoration: underline;">support@iiitdmk.ac.in</a> 
-        &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; 📞 Helpdesk: +91-12345-67890 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        ⚠️ Exam registration deadline: August 15, 2025. Please complete your registration on time!
       </span>
     </div>
   </div>

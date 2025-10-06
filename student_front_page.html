@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #eef2f3;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 20px 40px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .section h2 {
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 5px;
+      color: #333;
+    }
+
+    .test-list {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .test-list li {
+      background-color: #f9f9f9;
+      padding: 15px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-left: 5px solid #007bff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .test-list li button {
+      padding: 8px 15px;
+      background-color: #28a745;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .test-list li button:hover {
+      background-color: #218838;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      color: #777;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Welcome, Student!</h1>
+    <p>Your personalized dashboard</p>
+  </header>
+
+  <div class="container">
+    <div class="section">
+      <h2>Available Tests</h2>
+      <ul class="test-list">
+        <li>
+          <span>Math Quiz - Algebra Basics</span>
+          <button>Start Test</button>
+        </li>
+        <li>
+          <span>Science Quiz - Physics Fundamentals</span>
+          <button>Start Test</button>
+        </li>
+        <li>
+          <span>English Grammar Challenge</span>
+          <button>Start Test</button>
+        </li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Your Progress</h2>
+      <p>You’ve completed 3 out of 10 tests. Keep going!</p>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 TestHub Learning Platform
+  </footer>
+
+</body>
+</html>

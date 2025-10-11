@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>View Invigilator Duty</title>
+  <link rel="stylesheet" href="view-invigilator-duty.css" />
+</head>
+<body>
+
+  <!-- Navigation -->
+  <div class="navbar">
+    <div class="dropdown">
+      <button class="dropdown-btn">
+        <img src="https://www.freeiconspng.com/uploads/address-building-company-home-house-office-real-estate-icon--10.png" alt="Home" />
+      </button>
+    </div>
+    <a href="faculty_front_page.html">🏠 Dashboard</a>
+    <a href="#">🎓 My Courses</a>
+    <a href="create-test.html">📝 Create Test</a>
+    <a href="#">📊 View Result</a>
+    <a href="#">✅ Checklist</a>
+    <a href="view-invigilator-duty.html">⏰ View Invigilator Duty</a>
+    <div class="spacer"></div>
+    <a href="#">👤 View Profile</a>
+    <a href="#">🚪 Logout</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="container">
+      <div class="header">
+        <h1>Invigilator Duties</h1>
+        <p>Upcoming assignments and history</p>
+      </div>
+
+      <!-- Upcoming Duties Auto Section -->
+      <ul class="duty-list" id="upcomingDutyList" style="margin-bottom: 30px;">
+        <!-- Auto-populated by JS -->
+      </ul>
+
+      <!-- View Past Duties Button -->
+      <div class="view-btn-container">
+        <button class="view-btn" onclick="togglePastDuties()">📜 View Past Duties</button>
+      </div>
+
+      <!-- Past Duties List (hidden by default) -->
+      <ul class="duty-list" id="pastDutyList">
+        <!-- Populated by JS -->
+      </ul>
+    </div>
+  </div>
+
+  <script src="invigilator-duty.js"></script>
+</body>
+</html>

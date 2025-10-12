@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Create Test</title>
+  <style>
+    body {margin:0; font-family:Arial; background:#f4f7f9; display:flex; height:100vh; align-items:center; justify-content:center;}
+    form {background:white; padding:30px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); width:350px;}
+    label {font-weight:bold;}
+    input, select {width:100%; padding:8px; margin:8px 0 16px; border:1px solid #ccc; border-radius:5px;}
+    button {background:#1abc9c; color:white; border:none; padding:10px; width:100%; border-radius:5px; cursor:pointer;}
+    button:hover {background:#159a85;}
+  </style>
+</head>
+<body>
+
+<form id="createTestForm">
+  <h2 style="text-align:center;color:#1abc9c;">Create Test</h2>
+
+  <label>Branch</label>
+  <select id="branch" required>
+    <option value="">Select Branch</option>
+    <option value="CSE">CSE</option>
+    <option value="AIDS">AIDS</option>
+    <option value="ECE">ECE</option>
+    <option value="MECH">MECH</option>
+  </select>
+
+  <label>Test Title</label>
+  <input type="text" id="testTitle" required>
+
+  <label>Test Date</label>
+  <input type="date" id="testDate" required>
+
+  <label>Available From (Time)</label>
+  <input type="time" id="availableFrom" required>
+
+  <label>Duration (Minutes)</label>
+  <input type="number" id="duration" required min="1" max="300">
+
+  <label>Test Type</label>
+  <select id="testType" required>
+    <option value="">Select Type</option>
+    <option value="Quiz">Quiz</option>
+    <option value="Assignment">Assignment</option>
+  </select>
+
+  <button type="submit">Create Test</button>
+</form>
+
+<script>
+document.getElementById('createTestForm').addEventListener('submit', function(e){
+  e.preventDefault();
+
+  const formData = {
+    branch: document.getElementById('branch').value,
+    title: document.getElementById('testTitle').value.trim(),
+    date: document.getElementById('testDate').value,
+    availableFrom: document.getElementById('availableFrom').value,
+    duration: document.getElementById('duration').value,
+    type: document.getElementById('testType').value
+  };
+
+  fetch('create_test.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(formData)
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(data.status === 'success'){
+      localStorage.setItem('current_test_id', data.test_id);
+      alert('✅ Test created successfully!');
+      window.location.href = 'creating_test.html';
+    } else {
+      alert('❌ Error: ' + data.message);
+    }
+  })
+  .catch(err => alert('Error: ' + err));
+});
+</script>
+
+</body>
+</html>

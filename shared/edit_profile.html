@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Edit Profile</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f7f9;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background-color: #fff;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      position: relative;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #2c3e50;
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-weight: 600;
+      margin-top: 15px;
+      color: #34495e;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    textarea {
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-top: 5px;
+      background-color: #f9f9f9;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .btn-container {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .save-btn {
+      background-color: #1abc9c;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .save-btn:hover {
+      background-color: #16a085;
+    }
+
+    /* Tick GIF container */
+    .tick-container {
+      display: none;
+      text-align: center;
+      margin-top: 30px;
+      animation: fadeIn 0.8s ease-in-out forwards;
+    }
+
+    .tick-container img {
+      width: 100px;
+      height: auto;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Edit Profile</h2>
+
+    <!-- Form -->
+    <form id="editProfileForm">
+      <label for="name">Full Name</label>
+      <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+
+      <label for="designation">Designation</label>
+      <input type="text" id="designation" name="designation" placeholder="e.g., Associate Professor" required>
+
+      <label for="department">Department</label>
+      <input type="text" id="department" name="department" placeholder="e.g., Computer Science & Engineering" required>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="e.g., name@iiitk.ac.in" required>
+
+      <label for="phone">Phone</label>
+      <input type="tel" id="phone" name="phone" placeholder="e.g., +91 XXXXXXXXXX" required>
+
+      <label for="research">Research Interests</label>
+      <textarea id="research" name="research" placeholder="e.g., Machine Learning, NLP, Data Mining"></textarea>
+
+      <div class="btn-container">
+        <button type="submit" class="save-btn">Save Changes</button>
+      </div>
+    </form>
+
+    <!-- Tick animation -->
+    <div class="tick-container" id="tickContainer">
+      <img src="https://i.gifer.com/7efs.gif" alt="Saved successfully!" />
+      <p style="color:#2ecc71; font-weight: bold; font-size: 18px;">Changes Saved Successfully!</p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("editProfileForm");
+    const tickContainer = document.getElementById("tickContainer");
+
+    form.addEventListener("submit", function(event) {
+      event.preventDefault(); // Prevent real submission
+
+      // Optionally simulate a delay like it's saving
+      form.style.display = "none";
+      tickContainer.style.display = "block";
+    });
+  </script>
+
+</body>
+</html>

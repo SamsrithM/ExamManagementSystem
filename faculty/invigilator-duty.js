@@ -4,7 +4,7 @@ let pastDuties = [];
 let currentFacultyId = 1; // Default faculty ID - should be set from session
 
 // API Configuration
-const API_BASE_URL = 'api/';
+const API_BASE_URL = '../api/';
 
 // API Functions
 async function fetchUpcomingDuties() {

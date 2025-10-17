@@ -1,0 +1,348 @@
+<?php
+session_start();
+
+// Redirect if not logged in
+if (!isset($_SESSION['roll_number'])) {
+    header("Location: student_login.php");
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Dashboard</title>
+  <style>
+    /* ===== GENERAL STYLES ===== */
+    body { 
+      margin: 0; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background-color: #f4f7f9; 
+    }
+    .navbar { 
+      background-color: #2c3e50; 
+      padding: 0 10px; 
+      display: flex; 
+      align-items: center; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+    }
+    .navbar a, .dropdown-btn { 
+      color: white; 
+      text-decoration: none; 
+      padding: 0 20px; 
+      display: inline-flex; 
+      align-items: center; 
+      font-weight: 500; 
+      transition: background 0.3s, color 0.3s; 
+      height: 56px; 
+      cursor: pointer; 
+      border: none; 
+      background: none; 
+      font-size: 16px; 
+      user-select: none; 
+    }
+    .navbar a:hover, .dropdown-btn:hover { 
+      background-color: #1abc9c; 
+      color: black; 
+    }
+    .navbar a.active { 
+      background-color: #1abc9c; 
+      color: black; 
+      font-weight: 700; 
+    }
+    .dropdown-btn img { 
+      height: 40px; 
+      width: auto; 
+      margin-right: 8px; 
+    }
+    .navbar .spacer { flex-grow: 1; }
+    .main-section { padding: 40px; }
+
+    /* ===== COURSES SECTION ===== */
+    #coursesSection { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+      gap: 20px; 
+    }
+    .course-card { 
+      background: white; 
+      border-radius: 8px; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+      overflow: hidden; 
+      display: flex; 
+      flex-direction: column; 
+      height: 220px; 
+      transition: box-shadow 0.3s ease; 
+    }
+    .course-card:hover { 
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
+    }
+    .course-image { 
+      width: 100%; 
+      height: 110px; 
+      object-fit: cover; 
+      background-size: cover; 
+      background-position: center; 
+      border-bottom: 1px solid #ddd; 
+    }
+    .course-content { 
+      padding: 12px 14px; 
+      flex-grow: 1; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center; 
+      gap: 6px; 
+      font-size: 0.9rem; 
+      color: #333; 
+    }
+    .course-title { 
+      color: #1a73e8; 
+      font-weight: 600; 
+      line-height: 1.2; 
+      text-decoration: none; 
+      cursor: pointer; 
+    }
+    .course-subtitle { 
+      color: #555; 
+      font-weight: 400; 
+      font-size: 0.85rem; 
+    }
+
+    /* ===== CALENDAR ===== */
+    .calendar-header { 
+      font-size: 24px; 
+      font-weight: bold; 
+      color: #2c3e50; 
+      margin-bottom: 20px; 
+      text-align: center; 
+    }
+    .calendar-grid { 
+      display: grid; 
+      grid-template-columns: repeat(7, 1fr); 
+      gap: 8px; 
+    }
+    .day-name, .day { 
+      padding: 10px; 
+      text-align: center; 
+      border-radius: 6px; 
+    }
+    .day-name { 
+      background-color: #1abc9c; 
+      color: white; 
+      font-weight: 600; 
+    }
+    .day { 
+      background-color: #fff; 
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1); 
+      min-height: 80px; 
+      position: relative; 
+      cursor: default; 
+    }
+    .today { 
+      background-color: #2ecc71; 
+      color: white; 
+      font-weight: bold; 
+    }
+    .event { 
+      background-color: #3498db; 
+      color: white; 
+      padding: 2px 6px; 
+      margin-top: 4px; 
+      border-radius: 4px; 
+      font-size: 12px; 
+      cursor: pointer; 
+      white-space: nowrap; 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+    }
+
+    /* ===== MODAL ===== */
+    #modalOverlay { 
+      position: fixed; 
+      top: 0; left: 0; right: 0; bottom: 0; 
+      background-color: rgba(0,0,0,0.5); 
+      display: none; 
+      align-items: center; 
+      justify-content: center; 
+      z-index: 999; 
+    }
+    #modalContent { 
+      background: white; 
+      padding: 20px; 
+      border-radius: 8px; 
+      max-width: 400px; 
+      width: 90%; 
+      position: relative; 
+    }
+    #modalContent h3 { margin-top: 0; }
+    #modalClose { 
+      position: absolute; 
+      top: 10px; 
+      right: 15px; 
+      font-size: 18px; 
+      border: none; 
+      background: none; 
+      cursor: pointer; 
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <div class="navbar">
+    <div class="dropdown">
+      <button class="dropdown-btn" id="homeBtn" title="Home">
+        <img src="https://www.freeiconspng.com/uploads/address-building-company-home-house-office-real-estate-icon--10.png" alt="Home" />
+      </button>
+    </div>
+    <a href="#" id="dashboardLink" class="active">🏠 Dashboard</a>
+    <a href="#" id="coursesLink">📚 My Courses</a>
+    <a href="#">📊 Results</a>
+    <div class="spacer"></div>
+    <a href="student_view_profile.php">👤 View Profile</a>
+    <a href="../Ems_start/frontpage.php">🚪 Logout</a>
+  </div>
+
+  <!-- ===== Dashboard Section (Calendar) ===== -->
+  <div class="main-section" id="dashboardSection">
+    <div class="calendar-header" id="calendarMonthYear"></div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </div>
+
+  <!-- ===== Courses Section ===== -->
+  <div class="main-section" id="coursesSection">
+    <div class="course-card">
+      <div class="course-image" style="background: linear-gradient(135deg, #00796b 25%, #004d40 75%);"></div>
+      <div class="course-content">
+        <a href="#" class="course-title">CS101 - Introduction to Programming</a>
+        <div class="course-subtitle">Computer Science</div>
+      </div>
+    </div>
+    <div class="course-card">
+      <div class="course-image" style="background: linear-gradient(135deg, #512da8 25%, #311b92 75%);"></div>
+      <div class="course-content">
+        <a href="#" class="course-title">MA101 - Calculus</a>
+        <div class="course-subtitle">Mathematics</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modalOverlay">
+    <div id="modalContent">
+      <button id="modalClose" aria-label="Close modal">&times;</button>
+      <h3 id="modalTitle">Assignment Title</h3>
+      <p><strong>Course:</strong> <span id="modalCourse"></span></p>
+      <p><strong>Details:</strong> <span id="modalDetails"></span></p>
+    </div>
+  </div>
+
+  <script>
+    // ===== Assignments Sample Data =====
+    const assignments = [
+      { date: '2025-10-13', title: 'JS Assignment', course: 'Web Development', details: 'Complete exercises on functions and loops.' },
+      { date: '2025-10-20', title: 'Calculus Quiz', course: 'Mathematics', details: 'Quiz on limits, derivatives, and integration.' },
+    ];
+
+    // ===== DOM Elements =====
+    const calendarMonthYear = document.getElementById('calendarMonthYear');
+    const calendarGrid = document.getElementById('calendarGrid');
+    const dashboardSection = document.getElementById('dashboardSection');
+    const coursesSection = document.getElementById('coursesSection');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalCourse = document.getElementById('modalCourse');
+    const modalDetails = document.getElementById('modalDetails');
+    const modalClose = document.getElementById('modalClose');
+
+    modalClose.onclick = () => modalOverlay.style.display = 'none';
+    modalOverlay.onclick = (e) => { if (e.target === modalOverlay) modalOverlay.style.display = 'none'; };
+
+    function openModal(a) {
+      modalTitle.textContent = a.title;
+      modalCourse.textContent = a.course;
+      modalDetails.textContent = a.details;
+      modalOverlay.style.display = 'flex';
+    }
+
+    function renderCalendar(date) {
+      calendarGrid.innerHTML = '';
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDay = firstDay.getDay();
+      const totalDays = lastDay.getDate();
+      calendarMonthYear.textContent = firstDay.toLocaleString('default', { month: 'long', year: 'numeric' });
+      const today = new Date();
+
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      dayNames.forEach(day => {
+        const div = document.createElement('div');
+        div.className = 'day-name';
+        div.textContent = day;
+        calendarGrid.appendChild(div);
+      });
+
+      for (let i = 0; i < startDay; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'day';
+        calendarGrid.appendChild(empty);
+      }
+
+      for (let i = 1; i <= totalDays; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'day';
+        if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+          cell.classList.add('today');
+        }
+
+        const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+        const match = assignments.filter(a => a.date === dateStr);
+
+        cell.innerHTML = `<div>${i}</div>`;
+        match.forEach(a => {
+          const evt = document.createElement('div');
+          evt.className = 'event';
+          evt.textContent = a.title;
+          evt.onclick = () => openModal(a);
+          cell.appendChild(evt);
+        });
+        calendarGrid.appendChild(cell);
+      }
+    }
+
+    const today = new Date();
+    renderCalendar(today);
+
+    // ===== Navigation between sections =====
+    const dashboardLink = document.getElementById('dashboardLink');
+    const coursesLink = document.getElementById('coursesLink');
+
+    function setActiveLink(link) {
+      dashboardLink.classList.remove('active');
+      coursesLink.classList.remove('active');
+      link.classList.add('active');
+    }
+
+    dashboardLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      dashboardSection.style.display = 'block';
+      coursesSection.style.display = 'none';
+      setActiveLink(dashboardLink);
+    });
+
+    coursesLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      dashboardSection.style.display = 'none';
+      coursesSection.style.display = 'grid';
+      setActiveLink(coursesLink);
+    });
+
+    dashboardSection.style.display = 'block';
+    coursesSection.style.display = 'none';
+    setActiveLink(dashboardLink);
+  </script>
+</body>
+</html>

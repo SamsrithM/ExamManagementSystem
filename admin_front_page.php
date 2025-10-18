@@ -148,7 +148,7 @@ if (isset($_GET['delete_course']) && is_numeric($_GET['delete_course']) && empty
         $course_message = '<div style="color: #2e7d32; background: #e8f5e8; padding: 10px; border-radius: 5px; margin: 10px 0;">Course deleted successfully!</div>';
         // Refresh courses list
         $courses = [];
-        $courses_result = $courses_conn->query("SELECT course_id, course_name, course_code, description, created_at FROM admin_courses ORDER BY course_name ASC");
+        $courses_result = $courses_conn->query("SELECT course_id, course_name, course_code, description, assigned_faculty_id, assigned_faculty_name, assigned_faculty_email, created_at FROM admin_courses ORDER BY course_name ASC");
         while ($row = $courses_result->fetch_assoc()) {
             $courses[] = $row;
         }
@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['add_course']) || iss
                     $course_message = '<div style="color: #2e7d32; background: #e8f5e8; padding: 10px; border-radius: 5px; margin: 10px 0;">Course updated successfully!</div>';
                     // Refresh courses list
                     $courses = [];
-                    $courses_result = $courses_conn->query("SELECT course_id, course_name, course_code, description, created_at FROM admin_courses ORDER BY course_name ASC");
+                    $courses_result = $courses_conn->query("SELECT course_id, course_name, course_code, description, assigned_faculty_id, assigned_faculty_name, assigned_faculty_email, created_at FROM admin_courses ORDER BY course_name ASC");
                     while ($row = $courses_result->fetch_assoc()) {
                         $courses[] = $row;
                     }
@@ -213,7 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['add_course']) || iss
                     $course_message = '<div style="color: #2e7d32; background: #e8f5e8; padding: 10px; border-radius: 5px; margin: 10px 0;">Course added successfully!</div>';
                     // Refresh courses list
                     $courses = [];
-                    $courses_result = $courses_conn->query("SELECT course_id, course_name, course_code, description, created_at FROM admin_courses ORDER BY course_name ASC");
+                    $courses_result = $courses_conn->query("SELECT course_id, course_name, course_code, description, assigned_faculty_id, assigned_faculty_name, assigned_faculty_email, created_at FROM admin_courses ORDER BY course_name ASC");
                     while ($row = $courses_result->fetch_assoc()) {
                         $courses[] = $row;
                     }

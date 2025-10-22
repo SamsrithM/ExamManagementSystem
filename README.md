@@ -1,6 +1,7 @@
 #  Exam Management System - Folder Structure
 
 This document explains the organized folder structure of the Exam Management System.
+This project has been done in Html,Css,JS as the frontend , PHP(Personal Home Page) for backend and MySQL as database 
 
 ## 📁 Project Structure
 

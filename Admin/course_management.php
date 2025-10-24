@@ -1,0 +1,276 @@
+<?php
+session_start();
+
+if (!isset($_SESSION['admin_user'])) {
+    header("Location: admin_login.php");
+    exit;
+}
+
+// Database connection
+$conn = new mysqli("localhost", "root", "", "course_registration_data");
+if ($conn->connect_error) {
+    die("Database connection failed: " . $conn->connect_error);
+}
+
+// Handle add course
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_course'])) {
+    $course_name = $_POST['course_name'];
+    $course_code = $_POST['course_code'];
+    $description = !empty($_POST['description']) ? $_POST['description'] : NULL; // optional
+
+    $stmt = $conn->prepare("INSERT INTO admin_courses (course_name, course_code, description, created_at, updated_at)
+                            VALUES (?, ?, ?, NOW(), NOW())");
+    $stmt->bind_param("sss", $course_name, $course_code, $description);
+    $stmt->execute();
+    $stmt->close();
+}
+
+// Handle course delete
+if (isset($_GET['delete'])) {
+    $id = $_GET['delete'];
+    $stmt = $conn->prepare("DELETE FROM admin_courses WHERE course_id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->close();
+}
+
+// Handle faculty assignment
+if (isset($_POST['assign_faculty'])) {
+    $course_id = $_POST['course_id'];
+    $faculty_id = $_POST['faculty_id'];
+
+    // Fetch faculty details from another database
+    $faculty_conn = new mysqli("localhost", "root", "", "new_registration_data");
+    $fquery = $faculty_conn->prepare("SELECT first_name, last_name, email FROM faculty_new_data WHERE faculty_id = ?");
+    $fquery->bind_param("s", $faculty_id);
+    $fquery->execute();
+    $result = $fquery->get_result();
+
+    if ($result->num_rows > 0) {
+        $faculty = $result->fetch_assoc();
+        $faculty_name = $faculty['first_name'] . ' ' . $faculty['last_name'];
+        $faculty_email = $faculty['email'];
+
+        // Check if already assigned
+        $check = $conn->prepare("SELECT assigned_faculty_id FROM admin_courses WHERE course_id = ?");
+        $check->bind_param("i", $course_id);
+        $check->execute();
+        $check_result = $check->get_result()->fetch_assoc();
+        $check->close();
+
+        if (empty($check_result['assigned_faculty_id'])) {
+            $update = $conn->prepare("UPDATE admin_courses 
+                                      SET assigned_faculty_id = ?, assigned_faculty_name = ?, assigned_faculty_email = ?, updated_at = NOW() 
+                                      WHERE course_id = ?");
+            $update->bind_param("sssi", $faculty_id, $faculty_name, $faculty_email, $course_id);
+            $update->execute();
+            $update->close();
+        } else {
+            echo "<script>alert('⚠️ Course already assigned! Delete it first to reassign.');</script>";
+        }
+    }
+    $fquery->close();
+    $faculty_conn->close();
+}
+
+// Fetch all courses
+$courses = $conn->query("SELECT * FROM admin_courses ORDER BY created_at DESC");
+
+// Fetch all faculty for dropdown
+$faculty_conn = new mysqli("localhost", "root", "", "new_registration_data");
+$faculty_list = $faculty_conn->query("SELECT faculty_id, first_name, last_name, email FROM faculty_new_data ORDER BY first_name ASC");
+$faculty_data = [];
+while ($f = $faculty_list->fetch_assoc()) {
+    $faculty_data[] = $f;
+}
+$faculty_conn->close();
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Course Management</title>
+<style>
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background-color: #f5f8fc;
+        margin: 0;
+        padding: 0;
+    }
+
+    h2 {
+        color: #003366;
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .container {
+        width: 90%;
+        margin: 20px auto;
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    form {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    input, textarea, select {
+        padding: 10px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+    }
+
+    input[type="text"], select {
+        width: 220px;
+    }
+
+    button {
+        background-color: #0066cc;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #004c99;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 25px;
+    }
+
+    th, td {
+        padding: 12px;
+        border: 1px solid #ddd;
+        text-align: center;
+    }
+
+    th {
+        background-color: #003366;
+        color: white;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f2f6fa;
+    }
+
+    .delete-btn {
+        background-color: crimson;
+    }
+
+    .delete-btn:hover {
+        background-color: darkred;
+    }
+
+    .assign-section {
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    .search-box {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+    }
+
+    .search-box input {
+        padding: 8px 10px;
+        width: 220px;
+        border: 1px solid #aaa;
+        border-radius: 6px;
+    }
+</style>
+</head>
+<body>
+
+<h2>📘 Course Management</h2>
+
+<div class="container">
+    <form method="POST">
+        <input type="text" name="course_name" placeholder="Course Name" required>
+        <input type="text" name="course_code" placeholder="Course Code" required>
+        <textarea name="description" placeholder="Description (Optional)" rows="1" cols="25"></textarea>
+        <button type="submit" name="add_course">➕ Add Course</button>
+    </form>
+
+    <div class="search-box">
+        <input type="text" id="facultySearch" placeholder="🔍 Search Faculty or Course...">
+    </div>
+
+    <table>
+        <tr>
+            <th>Course ID</th>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Assigned Faculty</th>
+            <th>Action</th>
+        </tr>
+
+        <?php while ($row = $courses->fetch_assoc()): ?>
+        <tr>
+            <td><?= htmlspecialchars($row['course_id']) ?></td>
+            <td><?= htmlspecialchars($row['course_name']) ?></td>
+            <td><?= htmlspecialchars($row['course_code']) ?></td>
+            <td><?= htmlspecialchars($row['description'] ?? '-') ?></td>
+            <td>
+                <?php if (!empty($row['assigned_faculty_name'])): ?>
+                    <?= htmlspecialchars($row['assigned_faculty_name']) ?><br>
+                    <small><?= htmlspecialchars($row['assigned_faculty_email']) ?></small>
+                <?php else: ?>
+                    <form method="POST" class="assign-section">
+                        <input type="hidden" name="course_id" value="<?= $row['course_id'] ?>">
+                        <select name="faculty_id" required>
+                            <option value="">-- Select Faculty --</option>
+                            <?php foreach ($faculty_data as $f): ?>
+                                <option value="<?= $f['faculty_id'] ?>">
+                                    <?= htmlspecialchars($f['first_name'] . ' ' . $f['last_name']) ?> (<?= htmlspecialchars($f['email']) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="submit" name="assign_faculty">Assign</button>
+                    </form>
+                <?php endif; ?>
+            </td>
+            <td>
+                <a href="?delete=<?= $row['course_id'] ?>" onclick="return confirm('Delete this course?')" class="delete-btn" style="color:white;text-decoration:none;padding:6px 12px;border-radius:5px;">Delete</a>
+            </td>
+        </tr>
+        <?php endwhile; ?>
+    </table>
+    <div style="text-align:center; margin-top:20px;">
+        <a href="admin_front_page.php" 
+           style="display:inline-block; background:#0066cc; color:white; padding:10px 20px; border-radius:6px; text-decoration:none;">
+           ← Return to Dashboard
+        </a>
+    </div>
+</div>
+
+<script>
+// Simple search for faculty or course
+document.getElementById("facultySearch").addEventListener("keyup", function() {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll("table tr").forEach((row, index) => {
+        if (index === 0) return;
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? "" : "none";
+    });
+});
+</script>
+
+</body>
+</html>
+
+<?php $conn->close(); ?>

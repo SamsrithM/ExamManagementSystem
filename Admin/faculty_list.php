@@ -14,7 +14,7 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
 }
-
+    
 $db_error = "";
 $faculty = [];
 

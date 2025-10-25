@@ -58,26 +58,201 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Create Questions - Faculty Dashboard</title>
 <style>
-body { margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background-color:#f4f7f9; }
-form { background:white; padding:25px 30px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); max-width:800px; margin:30px auto; display:flex; flex-direction:column; gap:15px; }
-.question-block { border:1px solid #ccc; padding:20px; border-radius:8px; background:#fafafa; position:relative; }
-label { display:block; font-weight:600; margin-bottom:5px; }
-input, select { width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:6px; }
-button { padding:12px 20px; font-size:1rem; background-color:#1abc9c; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:700; margin-top:10px; }
-button:hover { background-color:#159a85; }
-.delete-question-btn { background:#e74c3c; color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer; }
-.delete-question-btn:hover { background:#c0392b; }
-#addQuestionBtn { background:#3498db; margin-top:10px; align-self:flex-start; }
-#addQuestionBtn:hover { background:#2980b9; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f9;
+    padding: 20px;
+  }
 
-.modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index:1000; animation:fadeIn 0.3s ease-in-out; }
-.modal-content { background:white; padding:25px 40px; border-radius:12px; text-align:center; box-shadow:0 5px 20px rgba(0,0,0,0.3); animation:scaleUp 0.3s ease-in-out; }
-.modal-content h3 { color:#2ecc71; margin:0; }
-.modal-content button { margin-top:15px; background:#2ecc71; color:white; border:none; padding:8px 18px; border-radius:6px; cursor:pointer; }
-.modal-content button:hover { background:#27ae60; }
+  form {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 30px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
 
-@keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
-@keyframes scaleUp { from {transform:scale(0.8);} to {transform:scale(1);} }
+  .question-block {
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 8px;
+    background: #fafafa;
+    position: relative;
+  }
+
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+  }
+
+  button {
+    padding: 12px 20px;
+    font-size: 1rem;
+    background-color: #1abc9c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 700;
+    margin-top: 10px;
+    transition: background-color 0.3s ease;
+  }
+
+  button:hover {
+    background-color: #159a85;
+  }
+
+  .delete-question-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .delete-question-btn:hover {
+    background: #c0392b;
+  }
+
+  #addQuestionBtn {
+    background: #3498db;
+    margin-top: 10px;
+    align-self: flex-start;
+  }
+
+  #addQuestionBtn:hover {
+    background: #2980b9;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .modal-content {
+    background: white;
+    padding: 25px 40px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    animation: scaleUp 0.3s ease-in-out;
+    max-width: 90%;
+  }
+
+  .modal-content h3 {
+    color: #2ecc71;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .modal-content button {
+    margin-top: 15px;
+    background: #2ecc71;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+    transition: background 0.3s ease;
+  }
+
+  .modal-content button:hover {
+    background: #27ae60;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes scaleUp {
+    from { transform: scale(0.8); }
+    to { transform: scale(1); }
+  }
+
+  @media screen and (max-width: 768px) {
+    form {
+      padding: 20px;
+    }
+
+    input,
+    select {
+      font-size: 14px;
+      padding: 8px;
+    }
+
+    button {
+      font-size: 15px;
+      padding: 10px 16px;
+    }
+
+    .modal-content h3 {
+      font-size: 18px;
+    }
+
+    .modal-content button {
+      font-size: 14px;
+      padding: 8px 16px;
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    .question-block {
+      padding: 15px;
+    }
+
+    label {
+      font-size: 14px;
+    }
+
+    input,
+    select {
+      font-size: 13px;
+    }
+
+    button {
+      font-size: 14px;
+    }
+
+    .modal-content h3 {
+      font-size: 16px;
+    }
+
+    .modal-content button {
+      font-size: 13px;
+    }
+  }
 </style>
 </head>
 <body>

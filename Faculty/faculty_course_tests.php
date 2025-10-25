@@ -42,13 +42,129 @@ $result = $stmt->get_result();
 <meta charset="UTF-8">
 <title>Course Exams</title>
 <style>
-body { font-family: Arial, sans-serif; background:#f4f7f9; padding:20px; }
-h2 { color:#2c3e50; }
-table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-th { background-color: #1abc9c; color: white; }
-tr:nth-child(even) { background-color: #f2f2f2; }
-.no-exams { padding: 30px; background-color: #fff3cd; color: #856404; text-align: center; border-radius: 8px; margin-top: 20px; }
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f7f9;
+    padding: 20px;
+    margin: 0;
+  }
+
+  h2 {
+    color: #2c3e50;
+    font-size: 24px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 20px;
+    background: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  th, td {
+    border: 1px solid #ccc;
+    padding: 12px;
+    text-align: left;
+    font-size: 15px;
+  }
+
+  th {
+    background-color: #1abc9c;
+    color: white;
+    font-size: 14px;
+    text-transform: uppercase;
+  }
+
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+
+  .no-exams {
+    padding: 30px;
+    background-color: #fff3cd;
+    color: #856404;
+    text-align: center;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  a.back-link {
+    display: inline-block;
+    background-color: #28a745;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: background-color 0.3s;
+  }
+
+  a.back-link:hover {
+    background-color: #218838;
+  }
+
+  @media screen and (max-width: 768px) {
+    h2 {
+      font-size: 20px;
+    }
+
+    th, td {
+      font-size: 14px;
+      padding: 10px;
+    }
+
+    a.back-link {
+      font-size: 14px;
+      padding: 10px 20px;
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    table, thead, tbody, th, td, tr {
+      display: block;
+    }
+
+    thead {
+      display: none;
+    }
+
+    tr {
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    td {
+      text-align: left;
+      padding: 8px 10px;
+      position: relative;
+    }
+
+    td::before {
+      content: attr(data-label);
+      font-weight: bold;
+      color: #1abc9c;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    a.back-link {
+      display: block;
+      width: 100%;
+      text-align: center;
+      margin-top: 20px;
+    }
+  }
 </style>
 </head>
 <body>

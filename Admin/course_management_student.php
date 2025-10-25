@@ -85,18 +85,93 @@ $conn->close();
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Batch & Course Assignment</title>
 <style>
-body { margin: 0; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #e0f7fa, #f1f8e9); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
-h1 { color: #00695c; text-align: center; margin-bottom: 20px; }
-.course-table { margin-top: 40px; width: 100%; max-width: 900px; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-.course-table th { background: #009688; color: white; padding: 12px; text-align: left; }
-.course-table td { padding: 10px; border-bottom: 1px solid #eee; }
-.course-table tr:hover { background: #f1f1f1; }
-.assign-btn, .back-btn { display: inline-block; margin-top: 25px; background: #00796b; color: white; padding: 8px 18px; border-radius: 8px; text-decoration: none; border: none; cursor: pointer; transition: background 0.3s; }
-.assign-btn:hover, .back-btn:hover { background: #004d40; }
-label { margin-right: 10px; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #e0f7fa, #f1f8e9);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
 
-/* Notification style */
-.notification {
+  h1 {
+    color: #00695c;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 28px;
+  }
+
+  form {
+    width: 100%;
+    max-width: 900px;
+  }
+
+  label {
+    display: inline-block;
+    margin: 10px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  input[type="text"] {
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    width: 180px;
+    max-width: 100%;
+  }
+
+  .course-table {
+    margin-top: 40px;
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .course-table th {
+    background: #009688;
+    color: white;
+    padding: 12px;
+    text-align: left;
+    font-size: 16px;
+  }
+
+  .course-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 15px;
+  }
+
+  .course-table tr:hover {
+    background: #f1f1f1;
+  }
+
+  .assign-btn,
+  .back-btn {
+    display: inline-block;
+    margin-top: 25px;
+    background: #00796b;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 16px;
+  }
+
+  .assign-btn:hover,
+  .back-btn:hover {
+    background: #004d40;
+  }
+
+  .notification {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -105,16 +180,70 @@ label { margin-right: 10px; }
     color: white;
     padding: 20px 30px;
     border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     font-size: 18px;
     text-align: center;
     z-index: 9999;
     opacity: 0;
     transition: opacity 0.3s;
-}
-.notification.show {
+  }
+
+  .notification.show {
     opacity: 1;
-}
+  }
+
+  /* Responsive Styles */
+  @media screen and (max-width: 768px) {
+    h1 {
+      font-size: 24px;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0;
+    }
+
+    input[type="text"] {
+      width: 100%;
+    }
+
+    .assign-btn,
+    .back-btn {
+      width: 100%;
+      font-size: 15px;
+    }
+
+    .course-table {
+      font-size: 14px;
+    }
+
+    .course-table th,
+    .course-table td {
+      padding: 10px;
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    body {
+      padding: 20px 10px;
+    }
+
+    h1 {
+      font-size: 22px;
+    }
+
+    .assign-btn,
+    .back-btn {
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    .course-table th,
+    .course-table td {
+      font-size: 13px;
+      padding: 8px;
+    }
+  }
 </style>
 </head>
 <body>

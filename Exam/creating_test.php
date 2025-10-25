@@ -1,55 +1,36 @@
 <?php
-// --- PHP: Handle saving questions from AJAX request ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = json_decode(file_get_contents('php://input'), true);
-    $test_id = $data['test_id'] ?? null;
-    $questions = $data['questions'] ?? [];
+session_start(); // ✅ Needed to access logged-in faculty info
 
-    $host = "localhost";
-    $user = "root";
-    $pass = "";
-    $db   = "test_creation";
-
-    $conn = new mysqli($host, $user, $pass, $db);
-    if ($conn->connect_error) {
-        die(json_encode(['status' => 'error', 'message' => 'Database connection failed']));
-    }
-
-    if (empty($test_id) || empty($questions)) {
-        echo json_encode(['status' => 'error', 'message' => 'Missing test_id or questions']);
-        exit;
-    }
-
-    $errors = [];
-    foreach ($questions as $q) {
-        $question   = $conn->real_escape_string($q['question'] ?? '');
-        $type       = 'objective'; // Only objective now
-        $options    = isset($q['options']) ? json_encode($q['options']) : null;
-        $answer     = $q['answer'] ?? null;
-
-        if (!$question || !$type || !$options || !$answer) {
-            $errors[] = "Question, options or correct answer missing.";
-            continue;
-        }
-
-        $sql = "INSERT INTO questions (test_id, question_text, question_type, options, correct_answer)
-                VALUES ('$test_id', '$question', '$type', '$options', '$answer')";
-
-        if (!$conn->query($sql)) {
-            $errors[] = "Insert failed for question: {$question}. Error: " . $conn->error;
-        }
-    }
-
-    if (!empty($errors)) {
-        echo json_encode(['status' => 'error', 'message' => implode("\n", $errors)]);
-    } else {
-        echo json_encode(['status' => 'success', 'message' => 'Questions saved']);
-    }
-
-    $conn->close();
+// Redirect if faculty not logged in
+if (!isset($_SESSION['faculty_user'])) {
+    header("Location: ../Faculty/faculty_login.php");
     exit;
 }
+
+// Database connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'test_creation';
+
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+if ($conn->connect_error) {
+    die("<h2 style='color:red;'>Database connection failed: ".$conn->connect_error."</h2>");
+}
+
+// Fetch all tests created by this faculty
+$faculty_email = $conn->real_escape_string($_SESSION['faculty_user']);
+$tests = [];
+$result = $conn->query("SELECT * FROM tests WHERE created_by='$faculty_email' ORDER BY test_date DESC");
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $tests[] = $row;
+    }
+}
+
+$conn->close();
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

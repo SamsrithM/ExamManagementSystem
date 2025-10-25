@@ -1,59 +1,58 @@
 <?php
 session_start(); // ✅ Needed to access logged-in faculty info
 
-// --- PHP Section: Handles form submission via POST (AJAX) ---
+// --- POST request handler ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // Read JSON data from the request body
+    // Get JSON body
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // Database connection
-    $host = "localhost";
-    $user = "root";
-    $pass = "";
-    $db   = "test_creation";  // change if needed
+    // Database connection using environment variables
+    $db_host = getenv('DB_HOST') ?: 'localhost';
+    $db_user = getenv('DB_USER') ?: 'root';
+    $db_pass = getenv('DB_PASS') ?: '';
+    $db_name = getenv('DB_NAME') ?: 'test_creation';
 
-    $conn = new mysqli($host, $user, $pass, $db);
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
     if ($conn->connect_error) {
-        die(json_encode(['status' => 'error', 'message' => 'Database connection failed.']));
+        die(json_encode(['status'=>'error','message'=>'Database connection failed.']));
     }
 
     // Extract form values
-    $branch        = $conn->real_escape_string($data['branch']);
-    $title         = $conn->real_escape_string($data['title']);
-    $date          = $conn->real_escape_string($data['date']);
-    $availableFrom = $conn->real_escape_string($data['availableFrom']);
-    $duration      = (int)$data['duration'];
-    $type          = $conn->real_escape_string($data['type']);
+    $branch        = $conn->real_escape_string($data['branch'] ?? '');
+    $title         = $conn->real_escape_string($data['title'] ?? '');
+    $date          = $conn->real_escape_string($data['date'] ?? '');
+    $availableFrom = $conn->real_escape_string($data['availableFrom'] ?? '');
+    $duration      = (int)($data['duration'] ?? 0);
+    $type          = $conn->real_escape_string($data['type'] ?? '');
 
     // Validate
-    if (empty($branch) || empty($title) || empty($date) || empty($availableFrom) || empty($duration) || empty($type)) {
-        echo json_encode(['status' => 'error', 'message' => 'All fields are required.']);
+    if (!$branch || !$title || !$date || !$availableFrom || !$duration || !$type) {
+        echo json_encode(['status'=>'error','message'=>'All fields are required.']);
         exit;
     }
 
-    // ✅ Get logged-in faculty username/email from session
+    // Check if faculty is logged in
     if (!isset($_SESSION['faculty_user'])) {
-        echo json_encode(['status' => 'error', 'message' => 'Faculty not logged in.']);
+        echo json_encode(['status'=>'error','message'=>'Faculty not logged in.']);
         exit;
     }
     $created_by = $conn->real_escape_string($_SESSION['faculty_user']);
 
-    // Insert into DB (added created_by column)
+    // Insert test
     $sql = "INSERT INTO tests (branch, test_title, test_date, available_from, duration, test_type, created_by)
-            VALUES ('$branch', '$title', '$date', '$availableFrom', '$duration', '$type', '$created_by')";
+            VALUES ('$branch','$title','$date','$availableFrom',$duration,'$type','$created_by')";
 
     if ($conn->query($sql) === TRUE) {
-        echo json_encode(['status' => 'success', 'test_id' => $conn->insert_id]);
+        echo json_encode(['status'=>'success','test_id'=>$conn->insert_id]);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Database insert failed: ' . $conn->error]);
+        echo json_encode(['status'=>'error','message'=>'Insert failed: '.$conn->error]);
     }
 
     $conn->close();
     exit;
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">

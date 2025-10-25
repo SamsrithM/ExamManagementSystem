@@ -1,37 +1,46 @@
 <?php
-// reviewquestions.php
+session_start(); // ✅ Needed to access logged-in faculty info
 
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db   = "test_creation";
+// Redirect if faculty not logged in
+if (!isset($_SESSION['faculty_user'])) {
+    header("Location: ../Faculty/faculty_login.php");
+    exit;
+}
 
-$conn = new mysqli($host, $user, $pass, $db);
+// Database connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'test_creation';
+
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
-    die("Database connection failed: ".$conn->connect_error);
+    die("<h2 style='color:red;'>Database connection failed: ".$conn->connect_error."</h2>");
 }
 
 // Fetch latest test_id from questions table
 $result = $conn->query("SELECT DISTINCT test_id FROM questions ORDER BY test_id DESC LIMIT 1");
-if ($result->num_rows == 0) {
+if (!$result || $result->num_rows == 0) {
     die("<h2>No questions found in database.</h2>");
 }
 $row = $result->fetch_assoc();
 $test_id = $row['test_id'];
 
-// Fetch questions for this test_id
+// Fetch questions for this test_id securely
 $stmt = $conn->prepare("SELECT * FROM questions WHERE test_id = ?");
 $stmt->bind_param("i", $test_id);
 $stmt->execute();
 $res = $stmt->get_result();
 
 $questions = [];
-while($row = $res->fetch_assoc()) {
+while ($row = $res->fetch_assoc()) {
     $questions[] = $row;
 }
 
+$stmt->close();
 $conn->close();
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

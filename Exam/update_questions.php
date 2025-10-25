@@ -1,14 +1,21 @@
 <?php
-// update_questions.php
+session_start(); // ✅ Needed to access logged-in faculty info
 
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db   = "test_creation";
+// Redirect if faculty not logged in
+if (!isset($_SESSION['faculty_user'])) {
+    header("Location: ../Faculty/faculty_login.php");
+    exit;
+}
 
-$conn = new mysqli($host, $user, $pass, $db);
+// Database connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'test_creation';
+
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
-    die("Database connection failed: " . $conn->connect_error);
+    die("<h2 style='color:red;'>Database connection failed: " . $conn->connect_error . "</h2>");
 }
 
 $showModal = false;
@@ -24,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     foreach ($questions as $id => $qtext) {
         $qtype = $types[$id];
-        if ($qtype == 'objective') {
+        if ($qtype === 'objective') {
             $options_json = json_encode(array_map('trim', explode("\n", $options_data[$id])));
             $correct = $correct_answers[$id] ?? '';
             $stmt = $conn->prepare("UPDATE questions SET question_text=?, options=?, correct_answer=? WHERE id=?");
@@ -35,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("ssi", $qtext, $desc_answer, $id);
         }
         $stmt->execute();
+        $stmt->close();
     }
 
     $showModal = true; // show success modal after submit
@@ -42,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch latest test_id
 $result = $conn->query("SELECT DISTINCT test_id FROM questions ORDER BY test_id DESC LIMIT 1");
-if ($result->num_rows == 0) {
+if (!$result || $result->num_rows == 0) {
     die("<h2>No questions found in database.</h2>");
 }
 $row = $result->fetch_assoc();
@@ -55,10 +63,11 @@ $stmt->execute();
 $res = $stmt->get_result();
 
 $questions = [];
-while($row = $res->fetch_assoc()) {
+while ($row = $res->fetch_assoc()) {
     $questions[] = $row;
 }
 
+$stmt->close();
 $conn->close();
 ?>
 

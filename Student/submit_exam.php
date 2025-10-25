@@ -90,39 +90,51 @@ $conn->close();
 <head>
     <title>Exam Submitted</title>
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-        }
-        .result-box {
-            text-align: center;
-            padding: 30px 50px;
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .result-box h1 {
-            color: #28a745;
-        }
-        .dashboard-btn {
-            margin-top: 20px;
-            padding: 10px 25px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            text-decoration: none;
-        }
-        .dashboard-btn:hover {
-            background-color: #0056b3;
-        }
-    </style>
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+}
+.result-box {
+    text-align: center;
+    padding: 30px 50px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: fadeIn 0.8s ease forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+.result-box h1 {
+    color: #28a745;
+    margin-bottom: 20px;
+}
+.dashboard-btn {
+    margin-top: 20px;
+    padding: 10px 25px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+.dashboard-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
 </head>
 <body>
     <div class="result-box">

@@ -49,19 +49,78 @@ $test_db->close();
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Course Details - <?= htmlspecialchars($course_code) ?></title>
 <style>
-body { font-family: Arial, sans-serif; margin:0; background:#f4f7f9; }
-nav { position: fixed; top:0; left:0; width:100%; background:#2c3e50; color:white; padding:12px 20px; box-shadow:0 2px 4px rgba(0,0,0,0.1); z-index:1000; }
-nav h2 { margin:0; font-size:18px; color:white; }
-nav a { color:white; text-decoration:none; margin-left:20px; font-weight:bold; }
-nav a:hover { color:#1abc9c; }
+body { 
+    font-family: Arial, sans-serif; 
+    margin:0; 
+    background:#f4f7f9; 
+}
 
-.container { padding:80px 20px 20px 20px; max-width:900px; margin:auto; }
+nav { 
+    position: fixed; 
+    top:0; 
+    left:0; 
+    width:100%; 
+    background:#2c3e50; 
+    color:white; 
+    padding:12px 20px; 
+    box-shadow:0 2px 4px rgba(0,0,0,0.1); 
+    z-index:1000; 
+}
 
-h2, h3 { color:#2c3e50; margin-bottom:10px; }
-.card { background:white; padding:15px; margin:10px 0; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-.no-data { color:#888; font-style:italic; }
-.back-btn { display:inline-block; margin-top:20px; padding:8px 14px; background:#1abc9c; color:white; text-decoration:none; border-radius:5px; }
-.back-btn:hover { background:#16a085; }
+nav h2 { 
+    margin:0; 
+    font-size:18px; 
+    color:white; 
+}
+
+nav a { 
+    color:white; 
+    text-decoration:none; 
+    margin-left:20px; 
+    font-weight:bold; 
+}
+
+nav a:hover { 
+    color:#1abc9c; 
+}
+
+.container { 
+    padding:80px 20px 20px 20px; 
+    max-width:900px; 
+    margin:auto; 
+}
+
+h2, h3 { 
+    color:#2c3e50; 
+    margin-bottom:10px; 
+}
+
+.card { 
+    background:white; 
+    padding:15px; 
+    margin:10px 0; 
+    border-radius:8px; 
+    box-shadow:0 2px 5px rgba(0,0,0,0.1); 
+}
+
+.no-data { 
+    color:#888; 
+    font-style:italic; 
+}
+
+.back-btn { 
+    display:inline-block; 
+    margin-top:20px; 
+    padding:8px 14px; 
+    background:#1abc9c; 
+    color:white; 
+    text-decoration:none; 
+    border-radius:5px; 
+}
+
+.back-btn:hover { 
+    background:#16a085; 
+}
 
 /* Take Exam button */
 .take-exam-btn {
@@ -74,7 +133,10 @@ h2, h3 { color:#2c3e50; margin-bottom:10px; }
     border-radius:5px;
     font-weight:bold;
 }
-.take-exam-btn:hover { background:#c0392b; }
+
+.take-exam-btn:hover { 
+    background:#c0392b; 
+}
 
 /* Responsive adjustments */
 @media(max-width:600px){
@@ -85,6 +147,7 @@ h2, h3 { color:#2c3e50; margin-bottom:10px; }
     .back-btn, .take-exam-btn { padding:6px 12px; font-size:14px; }
 }
 </style>
+
 </head>
 <body>
 

@@ -9,16 +9,18 @@ if(!isset($_SESSION['faculty_user'])) {
 
 $faculty_email = $_SESSION['faculty_user']; // logged-in faculty email
 
-// Database connection
-$db_host = "localhost";
-$db_user = "root";
-$db_pass = "";
-$test_db_name = "test_creation";
-$course_db_name = "course_registration_data";
+// Database connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$test_db_name   = getenv('TEST_DB') ?: 'test_creation';
+$course_db_name = getenv('COURSE_DB') ?: 'course_registration_data';
 
+// Connect to test database
 $test_db = new mysqli($db_host, $db_user, $db_pass, $test_db_name);
 if($test_db->connect_error) die("Test DB Connection failed: ".$test_db->connect_error);
 
+// Connect to course database
 $course_db = new mysqli($db_host, $db_user, $db_pass, $course_db_name);
 if($course_db->connect_error) die("Course DB Connection failed: ".$course_db->connect_error);
 

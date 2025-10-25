@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Make sure faculty is logged in
+// Ensure faculty is logged in
 if (!isset($_SESSION['faculty_user'])) {
     header("Location: faculty_login.php");
     exit;
@@ -9,33 +9,45 @@ if (!isset($_SESSION['faculty_user'])) {
 
 $faculty_email = $_SESSION['faculty_user'];
 
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db   = "test_creation";
+// Use environment variables for DB credentials (Render-friendly)
+$host = getenv('DB_HOST') ?: 'localhost';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: '';
+$db   = getenv('DB_NAME') ?: 'test_creation';
 
+// Create DB connection
 $conn = new mysqli($host, $user, $pass, $db);
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    die("<h2 style='color:red;'>Database connection failed.</h2>");
 }
 
-// Handle deletion
-if(isset($_GET['delete_id'])){
+// Handle deletion safely
+if (isset($_GET['delete_id'])) {
     $delete_id = (int)$_GET['delete_id'];
-    // Delete questions first
-    $conn->query("DELETE FROM questions WHERE test_id = $delete_id");
-    // Delete test
-    $conn->query("DELETE FROM tests WHERE test_id = $delete_id");
+
+    // Delete associated questions
+    $stmt_del_q = $conn->prepare("DELETE FROM questions WHERE test_id = ?");
+    $stmt_del_q->bind_param("i", $delete_id);
+    $stmt_del_q->execute();
+    $stmt_del_q->close();
+
+    // Delete the test
+    $stmt_del_t = $conn->prepare("DELETE FROM tests WHERE test_id = ?");
+    $stmt_del_t->bind_param("i", $delete_id);
+    $stmt_del_t->execute();
+    $stmt_del_t->close();
+
     header("Location: view_tests.php");
     exit;
 }
 
-// Fetch all tests created by logged-in faculty
+// Fetch all tests created by the logged-in faculty
 $stmt = $conn->prepare("SELECT * FROM tests WHERE created_by = ? ORDER BY test_id DESC");
 $stmt->bind_param("s", $faculty_email);
 $stmt->execute();
 $result = $stmt->get_result();
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

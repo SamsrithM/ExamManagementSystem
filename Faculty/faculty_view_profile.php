@@ -1,50 +1,51 @@
-    <?php
-    session_start();
+<?php
+session_start();
 
-    if (!isset($_SESSION['faculty_user'])) {
-        header("Location: faculty_login.php");
-        exit;
-    }
+if (!isset($_SESSION['faculty_user'])) {
+    header("Location: faculty_login.php");
+    exit;
+}
 
-    $host = "localhost";
-    $user = "root";
-    $pass = "";
-    $db = "new_registration_data";
+// DB connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name   = getenv('FACULTY_DETAILS_DB') ?: 'new_registration_data';
 
-    $conn = new mysqli($host, $user, $pass, $db);
-    if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
+// Connect to faculty details database
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
 
-    $faculty_email = $_SESSION['faculty_user'];
+$faculty_email = $_SESSION['faculty_user'];
 
-    // Fetch faculty data
-    $stmt = $conn->prepare("SELECT first_name, last_name, gender, email, department, designation, photo FROM faculty_new_data WHERE email = ?");
-    $stmt->bind_param("s", $faculty_email);
-    $stmt->execute();
-    $result = $stmt->get_result();
+// Fetch faculty data
+$stmt = $conn->prepare("SELECT first_name, last_name, gender, email, department, designation, photo FROM faculty_new_data WHERE email = ?");
+$stmt->bind_param("s", $faculty_email);
+$stmt->execute();
+$result = $stmt->get_result();
 
-    if ($result->num_rows === 1) {
-        $faculty = $result->fetch_assoc();
-    } else {
-        die("<h2 style='text-align:center; color:red;'>Faculty data not found for: $faculty_email</h2>");
-    }
+if ($result->num_rows === 1) {
+    $faculty = $result->fetch_assoc();
+} else {
+    die("<h2 style='text-align:center; color:red;'>Faculty data not found for: $faculty_email</h2>");
+}
 
-    $conn->close();
+$conn->close();
 
-    // Photo path
-    $defaultPhoto = "https://imgs.search.brave.com/pkPyTQFTOVFQw7Hki6hg6cgY5FPZ3UzkpUMsnfiuznQ/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/dmVjdG9yc3RvY2su/Y29tL2kvNTAwcC80/MS85MC9hdmF0YXIt/ZGVmYXVsdC11c2Vy/LXByb2ZpbGUtaWNv/bi1zaW1wbGUtZmxh/dC12ZWN0b3ItNTcy/MzQxOTAuanBn";
+// Photo path
+$defaultPhoto = "https://imgs.search.brave.com/pkPyTQFTOVFQw7Hki6hg6cgY5FPZ3UzkpUMsnfiuznQ/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/dmVjdG9yc3RvY2su/Y29tL2kvNTAwcC80/MS85MC9hdmF0YXIt/ZGVmYXVsdC11c2Vy/LXByb2ZpbGUtaWNv/bi1zaW1wbGUtZmxh/dC12ZWN0b3ItNTcy/MzQxOTAuanBn";
 
-    $photoPath = (!empty($faculty['photo']) && file_exists("faculty_uploads/" . $faculty['photo']))
-        ? "faculty_uploads/" . htmlspecialchars($faculty['photo'])
-        : $defaultPhoto;
-    ?>
-
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Profile</title>
-    <style>
+$photoPath = (!empty($faculty['photo']) && file_exists("faculty_uploads/" . $faculty['photo']))
+    ? "faculty_uploads/" . htmlspecialchars($faculty['photo'])
+    : $defaultPhoto;
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faculty Profile</title>
+<style>
 body { 
   font-family: Arial, sans-serif; 
   background: #e3f2fd; 
@@ -142,7 +143,6 @@ body {
   background: #0b5ed7; 
 }
 
-/* Responsive */
 @media (max-width:768px) {
     .profile-card { 
         flex-direction: column; 
@@ -157,8 +157,9 @@ body {
     }
 }
 </style>
-    </head>
-    <body>
+</head>
+<body>
+
 
     <div class="profile-card">
         <div class="profile-image">

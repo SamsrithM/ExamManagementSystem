@@ -1,14 +1,15 @@
 <?php
 session_start();
 
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db   = "test_creation";
+// Database connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'test_creation';
 
-$conn = new mysqli($host, $user, $pass, $db);
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    die("<h2 style='color:red;'>Database connection failed: " . $conn->connect_error . "</h2>");
 }
 
 $test_id = isset($_GET['test_id']) ? (int)$_GET['test_id'] : 0;
@@ -33,8 +34,9 @@ $question_result = $stmt_q->get_result();
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>View Questions</title>
+<title>View Questions - <?php echo htmlspecialchars($test['test_title']); ?></title>
 <style>
+/* Add your CSS styling here (same as original) */
 body { font-family: Arial, sans-serif; padding: 20px; background: #f4f7f9; }
 h2 { text-align: center; color: #1abc9c; margin-bottom: 5px; }
 h3 { text-align: center; color: #34495e; margin-bottom: 20px; }
@@ -51,6 +53,7 @@ ul.options li { margin: 2px 0; }
 </style>
 </head>
 <body>
+
 
 <h2>Test: <?php echo htmlspecialchars($test['test_title']); ?> (ID: <?php echo htmlspecialchars($test['test_id']); ?>)</h2>
 <h3>Branch: <?php echo htmlspecialchars($test['branch']); ?> | Date: <?php echo htmlspecialchars($test['test_date']); ?> | Created By: <?php echo htmlspecialchars($test['created_by']); ?></h3>

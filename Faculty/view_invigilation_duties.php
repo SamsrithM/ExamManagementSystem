@@ -6,17 +6,18 @@ if (!isset($_SESSION['faculty_user'])) {
     exit;
 }
 
-$db_host = "localhost";
-$db_user = "root";
-$db_pass = "";
-$db_name = "room_allocation";
+$faculty_email = $_SESSION['faculty_user'];
+
+// Database connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'room_allocation';
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
     die("<h2 style='color:red;'>Database connection failed: " . $conn->connect_error . "</h2>");
 }
-
-$faculty_email = $_SESSION['faculty_user'];
 
 // Fetch faculty name
 $stmt_name = $conn->prepare("SELECT faculty_name FROM faculty_assignments WHERE email_id = ? LIMIT 1");
@@ -50,7 +51,6 @@ $row_hours = $res_hours->fetch_assoc();
 $total_hours = $row_hours['total_hours'] ?? 0;
 $stmt_hours->close();
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>

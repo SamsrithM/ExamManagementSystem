@@ -1,37 +1,25 @@
 <?php
 session_start();
 
-// Database connection
-$db_host = "localhost";
-$db_user = "root";
-$db_pass = "";
-$db_name = "new_registration_data";
-$courses_db_name = "course_registration_data";
-$test_db_name = "test_creation"; // test_creation database
+// Database connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'new_registration_data';
+$courses_db_name = getenv('COURSES_DB') ?: 'course_registration_data';
+$test_db_name = getenv('TEST_DB') ?: 'test_creation';
 
 // Connect to main database for faculty info
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    $db_error = "Database connection failed: " . $conn->connect_error;
-} else {
-    $db_error = '';
-}
+if ($conn->connect_error) { $db_error = "Database connection failed: " . $conn->connect_error; } else { $db_error = ''; }
 
 // Connect to courses database
 $courses_conn = new mysqli($db_host, $db_user, $db_pass, $courses_db_name);
-if ($courses_conn->connect_error) {
-    $courses_db_error = "Courses database connection failed: " . $courses_conn->connect_error;
-} else {
-    $courses_db_error = '';
-}
+if ($courses_conn->connect_error) { $courses_db_error = "Courses database connection failed: " . $courses_conn->connect_error; } else { $courses_db_error = ''; }
 
 // Connect to test_creation database
 $test_conn = new mysqli($db_host, $db_user, $db_pass, $test_db_name);
-if ($test_conn->connect_error) {
-    $test_db_error = "Test database connection failed: " . $test_conn->connect_error;
-} else {
-    $test_db_error = '';
-}
+if ($test_conn->connect_error) { $test_db_error = "Test database connection failed: " . $test_conn->connect_error; } else { $test_db_error = ''; }
 
 // Get faculty info
 $faculty_email = $_SESSION['faculty_user'] ?? '';
@@ -40,7 +28,12 @@ $faculty_tests = [];
 
 // Get courses assigned to this faculty
 if (!empty($faculty_email) && empty($courses_db_error)) {
-    $courses_result = $courses_conn->query("SELECT course_id, course_name, course_code, description, assigned_faculty_email, created_at FROM admin_courses WHERE assigned_faculty_email = '$faculty_email' ORDER BY course_name ASC");
+    $courses_result = $courses_conn->query(
+        "SELECT course_id, course_name, course_code, description, assigned_faculty_email, created_at 
+         FROM admin_courses 
+         WHERE assigned_faculty_email = '$faculty_email' 
+         ORDER BY course_name ASC"
+    );
     while ($row = $courses_result->fetch_assoc()) {
         $faculty_courses[] = $row;
     }
@@ -62,8 +55,10 @@ if (!empty($faculty_email) && empty($test_db_error)) {
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />

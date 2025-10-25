@@ -6,15 +6,16 @@ if (!isset($_SESSION['faculty_user'])) {
     exit;
 }
 
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db = "new_registration_data";
-
-$conn = new mysqli($host, $user, $pass, $db);
-if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
-
 $faculty_email = $_SESSION['faculty_user'];
+
+// Database connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'new_registration_data';
+
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
     if ($_FILES['photo']['error'] === 0) {
@@ -31,7 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
             $new_file_name = $safe_email . '_' . time() . '.' . $file_ext;
             $target_file = $upload_dir . $new_file_name;
 
-            // move file
             if (move_uploaded_file($file_tmp, $target_file)) {
                 $stmt = $conn->prepare("UPDATE faculty_new_data SET photo=? WHERE email=?");
                 $stmt->bind_param("ss", $new_file_name, $faculty_email);

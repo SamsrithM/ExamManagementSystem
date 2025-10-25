@@ -1,61 +1,77 @@
 <?php
 session_start();
 if (!isset($_SESSION['faculty_user'])) {
-    die("Please login first!");
+    header("Location: faculty_login.php"); // redirect to login
+    exit;
 }
 
 $faculty_email = $_SESSION['faculty_user'];
 
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db_name = "room_allocation";
-$conn = new mysqli($host, $user, $pass, $db_name);
+// Database connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'room_allocation';
+
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
 
 $message = "";
 
-// Get faculty number_of_duties
-$faculty = $conn->query("SELECT * FROM faculty_duty_done WHERE email_id='$faculty_email'")->fetch_assoc();
+// Get faculty number_of_duties using prepared statement
+$stmt = $conn->prepare("SELECT number_of_duties FROM faculty_duty_done WHERE email_id=?");
+$stmt->bind_param("s", $faculty_email);
+$stmt->execute();
+$faculty = $stmt->get_result()->fetch_assoc();
+$stmt->close();
 $min_duties = $faculty['number_of_duties'] ?? 0;
 
 // Handle form submission
 if (isset($_POST['submit_slots'])) {
     $selected_slots = $_POST['slots'] ?? [];
-    
+
     if (count($selected_slots) < $min_duties) {
         $message = "❌ You must select at least $min_duties slots.";
     } else {
         foreach ($selected_slots as $slot_id) {
             // Check if slot already full
-            $check_slot = $conn->query("SELECT max_capacity FROM free_slots WHERE id='$slot_id'")->fetch_assoc();
-            $capacity = $check_slot['max_capacity'];
+            $stmt = $conn->prepare("SELECT max_capacity, slot_date, slot_time FROM free_slots WHERE id=?");
+            $stmt->bind_param("i", $slot_id);
+            $stmt->execute();
+            $slot = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
 
-            $taken = $conn->query("SELECT COUNT(*) AS count FROM faculty_slot_selection WHERE slot_id='$slot_id'")->fetch_assoc()['count'];
+            $stmt = $conn->prepare("SELECT COUNT(*) AS count FROM faculty_slot_selection WHERE slot_id=?");
+            $stmt->bind_param("i", $slot_id);
+            $stmt->execute();
+            $taken = $stmt->get_result()->fetch_assoc()['count'];
+            $stmt->close();
 
-            if ($taken >= $capacity) {
+            if ($taken >= $slot['max_capacity']) {
                 $message .= "⚠️ Slot ID $slot_id is already full!<br>";
                 continue;
             }
 
             // Prevent duplicate selection
-            $exists = $conn->query("SELECT * FROM faculty_slot_selection WHERE faculty_email='$faculty_email' AND slot_id='$slot_id'");
+            $stmt = $conn->prepare("SELECT 1 FROM faculty_slot_selection WHERE faculty_email=? AND slot_id=?");
+            $stmt->bind_param("si", $faculty_email, $slot_id);
+            $stmt->execute();
+            $exists = $stmt->get_result();
+            $stmt->close();
             if ($exists->num_rows > 0) continue;
 
-            $slot = $conn->query("SELECT * FROM free_slots WHERE id='$slot_id'")->fetch_assoc();
-
+            // Insert slot selection
             $stmt = $conn->prepare("
                 INSERT INTO faculty_slot_selection 
                 (faculty_email, slot_id, slot_date, slot_time, selected_at) 
                 VALUES (?, ?, ?, ?, NOW())
             ");
-            $stmt->bind_param("siss", $faculty_email, $slot['id'], $slot['slot_date'], $slot['slot_time']);
+            $stmt->bind_param("siss", $faculty_email, $slot_id, $slot['slot_date'], $slot['slot_time']);
             $stmt->execute();
             $stmt->close();
         }
-        if ($message == "") {
-            $message = "✅ Slots selected successfully!";
-        }
+
+        if ($message == "") $message = "✅ Slots selected successfully!";
     }
 }
 
@@ -64,10 +80,14 @@ $slots = $conn->query("SELECT * FROM free_slots ORDER BY slot_date ASC");
 
 // Fetch already selected slots for this faculty
 $selected_slots = [];
-$result = $conn->query("SELECT slot_id FROM faculty_slot_selection WHERE faculty_email='$faculty_email'");
+$stmt = $conn->prepare("SELECT slot_id FROM faculty_slot_selection WHERE faculty_email=?");
+$stmt->bind_param("s", $faculty_email);
+$stmt->execute();
+$result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
     $selected_slots[] = $row['slot_id'];
 }
+$stmt->close();
 ?>
 
 <!DOCTYPE html>

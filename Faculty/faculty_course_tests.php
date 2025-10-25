@@ -8,23 +8,23 @@ if (!isset($_SESSION['faculty_user'])) {
 $faculty_mail = $_SESSION['faculty_user'];
 $course_code = $_GET['course_code'] ?? '';
 
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'room_allocation';
+
 if (empty($course_code)) {
     echo "<p style='color:red;'>Invalid course selected.</p>";
     exit;
 }
 
 // Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "test_creation"; // tests & published_exam tables
-
-$conn = new mysqli($servername, $username, $password, $dbname);
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Correct query: only tests published by this faculty for this course
+// Fetch exams published by this faculty for this course
 $sql = "SELECT t.test_id, t.test_title, t.test_date, t.available_from, t.duration, t.test_type, p.course_code
         FROM tests t
         INNER JOIN published_exam p ON t.test_id = p.test_id
@@ -40,177 +40,62 @@ $result = $stmt->get_result();
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Course Exams</title>
+<title>Exams for <?php echo htmlspecialchars($course_code); ?></title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #f4f7f9;
-    padding: 20px;
-    margin: 0;
-  }
-
-  h2 {
-    color: #2c3e50;
-    font-size: 24px;
-    text-align: center;
-    margin-bottom: 20px;
-  }
-
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-top: 20px;
-    background: white;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  th, td {
-    border: 1px solid #ccc;
-    padding: 12px;
-    text-align: left;
-    font-size: 15px;
-  }
-
-  th {
-    background-color: #1abc9c;
-    color: white;
-    font-size: 14px;
-    text-transform: uppercase;
-  }
-
-  tr:nth-child(even) {
-    background-color: #f2f2f2;
-  }
-
-  .no-exams {
-    padding: 30px;
-    background-color: #fff3cd;
-    color: #856404;
-    text-align: center;
-    border-radius: 8px;
-    margin-top: 20px;
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  a.back-link {
-    display: inline-block;
-    background-color: #28a745;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    transition: background-color 0.3s;
-  }
-
-  a.back-link:hover {
-    background-color: #218838;
-  }
-
-  @media screen and (max-width: 768px) {
-    h2 {
-      font-size: 20px;
-    }
-
-    th, td {
-      font-size: 14px;
-      padding: 10px;
-    }
-
-    a.back-link {
-      font-size: 14px;
-      padding: 10px 20px;
-    }
-  }
-
-  @media screen and (max-width: 480px) {
-    table, thead, tbody, th, td, tr {
-      display: block;
-    }
-
-    thead {
-      display: none;
-    }
-
-    tr {
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 10px;
-      background: #fff;
-    }
-
-    td {
-      text-align: left;
-      padding: 8px 10px;
-      position: relative;
-    }
-
-    td::before {
-      content: attr(data-label);
-      font-weight: bold;
-      color: #1abc9c;
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    a.back-link {
-      display: block;
-      width: 100%;
-      text-align: center;
-      margin-top: 20px;
-    }
-  }
+body { font-family: Arial, sans-serif; background:#f4f7f9; margin:0; padding:20px;}
+h2 { text-align:center; color:#2c3e50; font-size:24px; margin-bottom:20px;}
+table { width:100%; border-collapse:collapse; margin-top:20px; background:white; box-shadow:0 4px 10px rgba(0,0,0,0.05); border-radius:8px; overflow:hidden;}
+th, td { border:1px solid #ccc; padding:12px; text-align:left; font-size:15px;}
+th { background-color:#1abc9c; color:white; font-size:14px; text-transform:uppercase;}
+tr:nth-child(even) { background:#f2f2f2;}
+.no-exams { padding:30px; background:#fff3cd; color:#856404; text-align:center; border-radius:8px; margin-top:20px; font-size:16px; font-weight:600;}
+.back-link { display:inline-block; background:#28a745; color:white; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:bold; box-shadow:0 4px 8px rgba(0,0,0,0.2); transition:0.3s;}
+.back-link:hover { background:#218838; }
+@media screen and (max-width:480px){
+  table, thead, tbody, th, td, tr { display:block; }
+  thead { display:none; }
+  tr { margin-bottom:15px; border:1px solid #ccc; border-radius:8px; padding:10px; background:#fff; }
+  td { text-align:left; padding:8px 10px; position:relative; }
+  td::before { content: attr(data-label); font-weight:bold; color:#1abc9c; display:block; margin-bottom:5px; }
+  .back-link { display:block; width:100%; text-align:center; margin-top:20px; }
+}
 </style>
 </head>
 <body>
 <h2>Exams for Course: <?php echo htmlspecialchars($course_code); ?></h2>
 
-<?php if ($result->num_rows > 0): ?>
+<?php if($result->num_rows > 0): ?>
 <table>
-    <tr>
-        <th>Test Title</th>
-        <th>Test Date</th>
-        <th>Available From</th>
-        <th>Duration</th>
-        <th>Test Type</th>
-        <th>Course Code</th>
-    </tr>
-    <?php while ($row = $result->fetch_assoc()): ?>
-    <tr>
-        <td><?php echo htmlspecialchars($row['test_title']); ?></td>
-        <td><?php echo htmlspecialchars($row['test_date']); ?></td>
-        <td><?php echo htmlspecialchars($row['available_from']); ?></td>
-        <td><?php echo htmlspecialchars($row['duration']); ?></td>
-        <td><?php echo htmlspecialchars($row['test_type']); ?></td>
-        <td><?php echo htmlspecialchars($row['course_code']); ?></td>
-    </tr>
-    <?php endwhile; ?>
+<tr>
+  <th>Test Title</th>
+  <th>Test Date</th>
+  <th>Available From</th>
+  <th>Duration</th>
+  <th>Test Type</th>
+  <th>Course Code</th>
+</tr>
+<?php while($row = $result->fetch_assoc()): ?>
+<tr>
+  <td data-label="Test Title"><?php echo htmlspecialchars($row['test_title']); ?></td>
+  <td data-label="Test Date"><?php echo htmlspecialchars($row['test_date']); ?></td>
+  <td data-label="Available From"><?php echo htmlspecialchars($row['available_from']); ?></td>
+  <td data-label="Duration"><?php echo htmlspecialchars($row['duration']); ?></td>
+  <td data-label="Test Type"><?php echo htmlspecialchars($row['test_type']); ?></td>
+  <td data-label="Course Code"><?php echo htmlspecialchars($row['course_code']); ?></td>
+</tr>
+<?php endwhile; ?>
 </table>
 <?php else: ?>
 <div class="no-exams">No exams published for this course by you.</div>
 <?php endif; ?>
-<div style="margin-top:30px; text-align:center;">
-    <a href="faculty_front_page.php" style="
-        display:inline-block;
-        background-color:#28a745;
-        color:white;
-        padding:12px 24px;
-        border-radius:8px;
-        text-decoration:none;
-        font-weight:bold;
-        box-shadow:0 4px 8px rgba(0,0,0,0.2);
-        transition:0.3s;
-    " onmouseover="this.style.backgroundColor='#218838'" onmouseout="this.style.backgroundColor='#28a745'">
-        &#8592; Back to Dashboard
-    </a>
+
+<div style="text-align:center; margin-top:30px;">
+<a href="faculty_front_page.php" class="back-link">&#8592; Back to Dashboard</a>
 </div>
+
 </body>
 </html>
+
 <?php
 $stmt->close();
 $conn->close();

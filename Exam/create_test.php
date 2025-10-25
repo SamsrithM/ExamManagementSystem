@@ -62,95 +62,155 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Create Test</title>
   <style>
-    body {
-      margin:0;
-      font-family:Arial, sans-serif;
-      background:#f4f7f9;
-      display:flex;
-      height:100vh;
-      align-items:center;
-      justify-content:center;
-    }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f7f9;
+    display: flex;
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
 
+  form {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+  }
+
+  h2 {
+    text-align: center;
+    color: #1abc9c;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 6px;
+    color: #333;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 15px;
+  }
+
+  button {
+    background: #1abc9c;
+    color: white;
+    border: none;
+    padding: 12px;
+    width: 100%;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  button:hover {
+    background: #159a85;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .modal-content {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    animation: scaleUp 0.3s ease-in-out;
+    max-width: 90%;
+  }
+
+  .modal-content h3 {
+    margin: 0;
+    color: #2ecc71;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .modal-content button {
+    margin-top: 15px;
+    background: #2ecc71;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 15px;
+    font-weight: bold;
+  }
+
+  .modal-content button:hover {
+    background: #27ae60;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes scaleUp {
+    from { transform: scale(0.8); }
+    to { transform: scale(1); }
+  }
+
+  @media screen and (max-width: 480px) {
     form {
-      background:white;
-      padding:30px;
-      border-radius:10px;
-      box-shadow:0 4px 10px rgba(0,0,0,0.1);
-      width:350px;
+      padding: 25px 20px;
     }
 
-    label {font-weight:bold;}
-    input, select {
-      width:100%;
-      padding:8px;
-      margin:8px 0 16px;
-      border:1px solid #ccc;
-      border-radius:5px;
+    h2 {
+      font-size: 20px;
     }
+
+    input,
+    select {
+      font-size: 14px;
+      padding: 8px;
+    }
+
     button {
-      background:#1abc9c;
-      color:white;
-      border:none;
-      padding:10px;
-      width:100%;
-      border-radius:5px;
-      cursor:pointer;
-      transition:0.3s;
+      font-size: 15px;
+      padding: 10px;
     }
-    button:hover {background:#159a85;}
 
-    /* Center popup modal */
-    .modal {
-      display:none;
-      position:fixed;
-      top:0;
-      left:0;
-      width:100%;
-      height:100%;
-      background:rgba(0,0,0,0.4);
-      z-index:1000;
-      align-items:center;
-      justify-content:center;
-      animation:fadeIn 0.3s ease-in-out;
-    }
-    .modal-content {
-      background:white;
-      padding:25px 40px;
-      border-radius:12px;
-      text-align:center;
-      box-shadow:0 5px 20px rgba(0,0,0,0.3);
-      animation:scaleUp 0.3s ease-in-out;
-    }
     .modal-content h3 {
-      margin:0;
-      color:#2ecc71;
-      font-size:20px;
-      font-weight:600;
-    }
-    .modal-content button {
-      margin-top:15px;
-      background:#2ecc71;
-      color:white;
-      border:none;
-      padding:8px 18px;
-      border-radius:6px;
-      cursor:pointer;
-      transition:background 0.3s;
-    }
-    .modal-content button:hover {
-      background:#27ae60;
+      font-size: 18px;
     }
 
-    @keyframes fadeIn {
-      from {opacity:0;}
-      to {opacity:1;}
+    .modal-content button {
+      font-size: 14px;
+      padding: 8px 16px;
     }
-    @keyframes scaleUp {
-      from {transform:scale(0.8);}
-      to {transform:scale(1);}
-    }
-  </style>
+  }
+</style>
 </head>
 <body>
 

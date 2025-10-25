@@ -20,7 +20,7 @@ session_start();
     padding: 20px;
     overflow: hidden;
   }
-
+  
   .success-container {
     background: #fff;
     padding: 40px 30px;

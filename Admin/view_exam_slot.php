@@ -38,29 +38,214 @@ $result = $conn->query($sql);
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>👀 View Faculty Exam Slots</title>
 <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fafb; margin: 0; padding: 0; }
-    h2 { text-align: center; margin-top: 25px; color: #333; }
-    table { border-collapse: collapse; margin: 40px auto; width: 95%; max-width: 1000px; background-color: #ffffff; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); border-radius: 10px; overflow: hidden; }
-    th, td { padding: 12px 18px; text-align: center; border-bottom: 1px solid #e2e8f0; }
-    th { background-color: #2563eb; color: white; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px; }
-    tr:hover { background-color: #f1f5f9; }
-    td { font-size: 15px; color: #444; }
-    .delete-btn { background-color: #ef4444; color: #fff; padding: 6px 12px; border-radius: 5px; text-decoration: none; font-weight: bold; transition: 0.2s; }
-    .delete-btn:hover { background-color: #b91c1c; }
-    .no-data { text-align: center; color: #555; font-size: 16px; margin-top: 30px; }
-    .back-btn-container { text-align: center; margin: 40px 0; }
-    .back-btn { background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; font-size: 15px; transition: 0.2s; }
-    .back-btn:hover { background-color: #1e40af; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f9fafb;
+    margin: 0;
+    padding: 0;
+  }
 
-    /* Modal Styles */
-    #deleteModal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-    #deleteModalContent { background: white; padding: 25px 30px; border-radius: 8px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-    #deleteModalContent p { margin-bottom: 20px; font-size: 16px; color: #333; }
-    #deleteModalContent button { padding: 8px 18px; margin: 0 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-    #confirmDelete { background-color: #ef4444; color: #fff; }
-    #cancelDelete { background-color: #6b7280; color: #fff; }
-    #confirmDelete:hover { background-color: #b91c1c; }
-    #cancelDelete:hover { background-color: #4b5563; }
+  h2 {
+    text-align: center;
+    margin-top: 25px;
+    color: #333;
+    font-size: 26px;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin: 40px auto;
+    width: 95%;
+    max-width: 1000px;
+    background-color: #ffffff;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  th,
+  td {
+    padding: 12px 18px;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 15px;
+  }
+
+  th {
+    background-color: #2563eb;
+    color: white;
+    text-transform: uppercase;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+
+  tr:hover {
+    background-color: #f1f5f9;
+  }
+
+  .delete-btn {
+    background-color: #ef4444;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.2s;
+    border: none;
+    cursor: pointer;
+  }
+
+  .delete-btn:hover {
+    background-color: #b91c1c;
+  }
+
+  .no-data {
+    text-align: center;
+    color: #555;
+    font-size: 16px;
+    margin-top: 30px;
+  }
+
+  .back-btn-container {
+    text-align: center;
+    margin: 40px 0;
+  }
+
+  .back-btn {
+    background-color: #2563eb;
+    color: #ffffff;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 15px;
+    transition: 0.2s;
+  }
+
+  .back-btn:hover {
+    background-color: #1e40af;
+  }
+
+  /* Modal Styles */
+  #deleteModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  #deleteModalContent {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  #deleteModalContent p {
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: #333;
+  }
+
+  #deleteModalContent button {
+    padding: 8px 18px;
+    margin: 0 10px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  #confirmDelete {
+    background-color: #ef4444;
+    color: #fff;
+  }
+
+  #cancelDelete {
+    background-color: #6b7280;
+    color: #fff;
+  }
+
+  #confirmDelete:hover {
+    background-color: #b91c1c;
+  }
+
+  #cancelDelete:hover {
+    background-color: #4b5563;
+  }
+
+  /* Responsive Styles */
+  @media screen and (max-width: 768px) {
+    h2 {
+      font-size: 22px;
+    }
+
+    table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr {
+      display: block;
+    }
+
+    thead {
+      display: none;
+    }
+
+    tr {
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    td {
+      text-align: left;
+      padding: 8px 10px;
+      position: relative;
+    }
+
+    td::before {
+      content: attr(data-label);
+      font-weight: bold;
+      color: #2563eb;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .delete-btn {
+      width: 100%;
+      text-align: center;
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    .back-btn {
+      font-size: 14px;
+      padding: 8px 16px;
+    }
+
+    #deleteModalContent p {
+      font-size: 14px;
+    }
+
+    #deleteModalContent button {
+      font-size: 14px;
+      padding: 6px 14px;
+    }
+  }
 </style>
 </head>
 <body>

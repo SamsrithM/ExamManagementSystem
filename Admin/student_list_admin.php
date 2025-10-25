@@ -41,27 +41,206 @@ $conn->close();
 <meta charset="UTF-8">
 <title>Students by Batch</title>
 <style>
-body { font-family: 'Segoe UI', sans-serif; background:#f5f8fc; margin:0; padding:0; }
-.container { width:90%; max-width:1200px; margin:20px auto; }
-h2 { color:#003366; margin-bottom:20px; }
-.program-section { display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:20px; }
-.program-card { background:white; border-radius:12px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); transition:0.3s; }
-.program-card:hover { transform: translateY(-5px); box-shadow:0 6px 20px rgba(0,0,0,0.15); }
-.program-name { font-size:18px; font-weight:bold; color:#0066cc; margin-bottom:10px; }
-.department-name { font-weight:600; margin-bottom:5px; color:#003366; }
-.batch-list { display:flex; flex-wrap: wrap; gap:10px; }
-.batch-list a { padding:6px 12px; background:#0066cc; color:white; border-radius:6px; text-decoration:none; font-size:14px; }
-.batch-list a:hover { background:#004c99; }
-.back-btn { background:#0066cc; color:white; padding:10px 20px; border-radius:6px; border:none; cursor:pointer; margin:20px 0; text-decoration:none; display:inline-block; transition:0.3s; }
-.back-btn:hover { background:#004c99; }
-.student-table { width:100%; border-collapse:collapse; margin-top:20px; background:white; border-radius:8px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
-.student-table th, .student-table td { padding:12px; text-align:left; }
-.student-table th { background:#003366; color:white; }
-.student-table tr:nth-child(even) { background:#f2f6fa; }
-.no-students { text-align:center; padding:40px; background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); color:#666; }
-.search-box { margin-top:20px; margin-bottom:10px; display:flex; justify-content:flex-end; }
-.search-box input { padding:8px 12px; border-radius:6px; border:1px solid #ccc; width:250px; }
-@media(max-width:768px){ .program-section { grid-template-columns: 1fr; } .search-box { justify-content:center; } }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f5f8fc;
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto;
+  }
+
+  h2 {
+    color: #003366;
+    margin-bottom: 20px;
+    font-size: 26px;
+  }
+
+  .program-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .program-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: 0.3s;
+  }
+
+  .program-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .program-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #0066cc;
+    margin-bottom: 10px;
+  }
+
+  .department-name {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #003366;
+  }
+
+  .batch-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .batch-list a {
+    padding: 6px 12px;
+    background: #0066cc;
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  .batch-list a:hover {
+    background: #004c99;
+  }
+
+  .back-btn {
+    background: #0066cc;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    margin: 20px 0;
+    text-decoration: none;
+    display: inline-block;
+    transition: 0.3s;
+  }
+
+  .back-btn:hover {
+    background: #004c99;
+  }
+
+  .student-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .student-table th,
+  .student-table td {
+    padding: 12px;
+    text-align: left;
+    font-size: 14px;
+  }
+
+  .student-table th {
+    background: #003366;
+    color: white;
+  }
+
+  .student-table tr:nth-child(even) {
+    background: #f2f6fa;
+  }
+
+  .no-students {
+    text-align: center;
+    padding: 40px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: #666;
+  }
+
+  .search-box {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .search-box input {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    width: 250px;
+  }
+
+  /* Responsive Styles */
+  @media (max-width: 768px) {
+    h2 {
+      font-size: 22px;
+    }
+
+    .program-section {
+      grid-template-columns: 1fr;
+    }
+
+    .search-box {
+      justify-content: center;
+    }
+
+    .student-table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr {
+      display: block;
+    }
+
+    thead {
+      display: none;
+    }
+
+    .student-table tr {
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .student-table td {
+      text-align: left;
+      padding: 8px 10px;
+      position: relative;
+    }
+
+    .student-table td::before {
+      content: attr(data-label);
+      font-weight: bold;
+      color: #003366;
+      display: block;
+      margin-bottom: 5px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .search-box input {
+      width: 100%;
+    }
+
+    .back-btn {
+      width: 100%;
+      text-align: center;
+    }
+
+    .student-table td {
+      font-size: 13px;
+    }
+  }
 </style>
 <script>
 function goBack() { window.history.back(); }

@@ -21,21 +21,101 @@ $result = $conn->query($sql);
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Assign Duties - Classroom Management</title>
 <style>
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7fa; margin: 0; padding: 40px 20px; display: flex; justify-content: center; flex-direction: column; align-items: center; }
-.container { width: 650px; background: #fff; padding: 30px 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-h1 { text-align: center; color: #1a73e8; font-size: 2rem; margin-bottom: 25px; }
-.classroom-row { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; }
-button { padding: 8px 14px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; font-size: 0.95rem; height: 38px; }
-.classroom-btn { background: linear-gradient(135deg, #1a73e8, #155fc1); color: #fff; flex: 1; }
-.assign-btn { background: linear-gradient(135deg, #28a745, #1e7e34); color: #fff; }
-.delete-btn { background: linear-gradient(135deg, #dc3545, #a71d2a); color: #fff; }
-.dashboard-btn { background: linear-gradient(135deg, #1a73e8, #155fc1); color: #fff; width: 100%; margin-top: 25px; }
-.classroom-btn:hover { background: linear-gradient(135deg, #155fc1, #1a5fb4); }
-.assign-btn:hover { background: linear-gradient(135deg, #1e7e34, #166227); }
-.delete-btn:hover { background: linear-gradient(135deg, #a71d2a, #7a1017); }
-.dashboard-btn:hover { background: linear-gradient(135deg, #155fc1, #1a5fb4); }
-#assigned-faculty { margin-top: 20px; background: #e7f3ff; padding: 15px; border-radius: 8px; display: none; }
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background: #f4f7fa; 
+    margin: 0; 
+    padding: 40px 20px; 
+    display: flex; 
+    justify-content: center; 
+    flex-direction: column; 
+    align-items: center; 
+}
+.container { 
+    width: 100%; 
+    max-width: 650px; 
+    background: #fff; 
+    padding: 30px 25px; 
+    border-radius: 12px; 
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
+}
+h1 { 
+    text-align: center; 
+    color: #1a73e8; 
+    font-size: 2rem; 
+    margin-bottom: 25px; 
+}
+.classroom-row { 
+    display: flex; 
+    align-items: center; 
+    margin-bottom: 12px; 
+    gap: 10px; 
+    flex-wrap: wrap; 
+}
+button { 
+    padding: 8px 14px; 
+    font-weight: 600; 
+    border: none; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    transition: all 0.3s ease; 
+    font-size: 0.95rem; 
+    height: 38px; 
+}
+.classroom-btn { 
+    background: linear-gradient(135deg, #1a73e8, #155fc1); 
+    color: #fff; 
+    flex: 1; 
+    min-width: 150px;
+    text-align: center;
+}
+.assign-btn { 
+    background: linear-gradient(135deg, #28a745, #1e7e34); 
+    color: #fff; 
+    min-width: 110px;
+}
+.delete-btn { 
+    background: linear-gradient(135deg, #dc3545, #a71d2a); 
+    color: #fff; 
+    min-width: 110px;
+}
+.dashboard-btn { 
+    background: linear-gradient(135deg, #1a73e8, #155fc1); 
+    color: #fff; 
+    width: 100%; 
+    margin-top: 25px; 
+    padding: 12px;
+    font-size: 1rem;
+}
+.classroom-btn:hover { 
+    background: linear-gradient(135deg, #155fc1, #1a5fb4); 
+}
+.assign-btn:hover { 
+    background: linear-gradient(135deg, #1e7e34, #166227); 
+}
+.delete-btn:hover { 
+    background: linear-gradient(135deg, #a71d2a, #7a1017); 
+}
+.dashboard-btn:hover { 
+    background: linear-gradient(135deg, #155fc1, #1a5fb4); 
+}
+#assigned-faculty { 
+    margin-top: 20px; 
+    background: #e7f3ff; 
+    padding: 15px; 
+    border-radius: 8px; 
+    display: none; 
+    font-size: 0.95rem;
+}
+@media(max-width:480px){
+    .container { padding: 20px 15px; }
+    .classroom-row { flex-direction: column; align-items: stretch; }
+    button { width: 100%; min-width: unset; }
+    h1 { font-size: 1.5rem; margin-bottom: 20px; }
+    #assigned-faculty { font-size: 0.9rem; }
+}
 </style>
+
 </head>
 <body>
 

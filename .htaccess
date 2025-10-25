@@ -1,0 +1,30 @@
+# Enable URL rewriting
+RewriteEngine On
+
+# Set the base directory (change this if your project is inside a subfolder)
+RewriteBase /
+
+# Redirect all requests to index.php if the requested file or directory doesn't exist
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [L]
+
+# Set default file to load
+DirectoryIndex index.php
+
+# Handle CORS (optional)
+<IfModule mod_headers.c>
+  Header set Access-Control-Allow-Origin "*"
+  Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+  Header set Access-Control-Allow-Headers "Content-Type"
+</IfModule>
+
+# Improve security headers (optional but recommended)
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# Disable directory listing
+Options -Indexes

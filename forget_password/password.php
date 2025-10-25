@@ -212,17 +212,81 @@ $new_reg_conn->close();
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Forgot/Reset Password</title>
 <style>
-body { font-family: Arial, sans-serif; background:#f4f7f9; display:flex; justify-content:center; align-items:center; height:100vh; }
-.container { background:#fff; padding:40px; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,0.2); width:100%; max-width:400px; text-align:center; }
-h2 { color:#2c3e50; margin-bottom:20px; }
-input, select { width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #ccc; font-size:16px; }
-button { width:100%; padding:12px; background-color:#1abc9c; color:white; font-size:16px; border:none; border-radius:8px; cursor:pointer; transition:0.3s; }
-button:hover { background-color:#16a085; }
-.message { margin-bottom:15px; color:#e74c3c; }
-.back-login { margin-top:15px; display:inline-block; color:#1abc9c; text-decoration:none; }
-.back-login:hover { text-decoration:underline; }
-.timer { font-weight:bold; margin-bottom:15px; color:#2c3e50; }
+body { 
+    font-family: Arial, sans-serif; 
+    background:#f4f7f9; 
+    display:flex; 
+    justify-content:center; 
+    align-items:center; 
+    height:100vh; 
+    margin:0;
+}
+.container { 
+    background:#fff; 
+    padding:40px; 
+    border-radius:12px; 
+    box-shadow:0 8px 20px rgba(0,0,0,0.2); 
+    width:100%; 
+    max-width:400px; 
+    text-align:center; 
+}
+h2 { 
+    color:#2c3e50; 
+    margin-bottom:20px; 
+    font-size:24px;
+}
+input, select { 
+    width:100%; 
+    padding:12px; 
+    margin-bottom:20px; 
+    border-radius:8px; 
+    border:1px solid #ccc; 
+    font-size:16px; 
+    box-sizing:border-box;
+}
+button { 
+    width:100%; 
+    padding:12px; 
+    background-color:#1abc9c; 
+    color:white; 
+    font-size:16px; 
+    border:none; 
+    border-radius:8px; 
+    cursor:pointer; 
+    transition:0.3s; 
+}
+button:hover { 
+    background-color:#16a085; 
+}
+.message { 
+    margin-bottom:15px; 
+    color:#e74c3c; 
+    font-size:14px;
+}
+.back-login { 
+    margin-top:15px; 
+    display:inline-block; 
+    color:#1abc9c; 
+    text-decoration:none; 
+    font-size:14px;
+}
+.back-login:hover { 
+    text-decoration:underline; 
+}
+.timer { 
+    font-weight:bold; 
+    margin-bottom:15px; 
+    color:#2c3e50; 
+    font-size:14px;
+}
+@media(max-width:480px){
+    .container { padding:30px; }
+    h2 { font-size:20px; }
+    input, select, button { font-size:14px; padding:10px; }
+    .message, .back-login, .timer { font-size:12px; }
+}
 </style>
+
 </head>
 <body>
 

@@ -69,56 +69,293 @@ if (!empty($faculty_email) && empty($test_db_error)) {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Faculty Dashboard</title>
 <style>
-  body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f9; color: #2c3e50; }
-  .navbar { background-color: #2c3e50; padding: 0 10px; display: flex; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-  .navbar a, .dropdown-btn { 
-    color: white; 
-    text-decoration: none; 
-    padding: 0 12px;  /* smaller padding */
-    display: inline-flex; 
-    align-items: center; 
-    font-weight: 500; 
-    transition: background 0.3s, color 0.3s; 
-    height: 56px; 
-    cursor: pointer; 
-    border: none; 
-    background: none; 
-    font-size: 14px;  /* smaller font size */
-    user-select: none; 
+  /* Base styles */
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f9;
+    color: #2c3e50;
   }
-  .navbar a:hover, .dropdown-btn:hover { background-color: #1abc9c; color: black; }
-  .navbar a.active { background-color: #1abc9c; color: black; font-weight: 700; }
-  .navbar .spacer { flex-grow: 1; }
-  .dropdown-btn img { height: 40px; width: auto; margin-right: 8px; }
 
-  .main { padding: 40px; }
-  .section { display: none; }
+  /* Navbar */
+  .navbar {
+    background-color: #2c3e50;
+    padding: 0 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
 
-  #coursesSection { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-  .course-card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: box-shadow 0.3s ease; height: 220px; width: 100%; }
-  .course-card:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-  .course-image { height: 110px; background-size: cover; background-position: center; border-bottom: 1px solid #ddd; }
-  .course-content { padding: 12px 14px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
-  .course-title { color: #1a73e8; font-weight: 600; text-decoration: none; cursor: pointer; }
-  .course-subtitle { color: #555; font-weight: 400; font-size: 0.85rem; }
+  .navbar a,
+  .dropdown-btn {
+    color: white;
+    text-decoration: none;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    transition: background 0.3s, color 0.3s;
+    height: 48px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-size: 15px;
+    user-select: none;
+  }
 
-  .calendar-header { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 20px; text-align: center; }
-  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
-  .day-name, .day { padding: 10px; text-align: center; border-radius: 6px; }
-  .day-name { background-color: #1abc9c; color: white; font-weight: 600; }
-  .day { background-color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.1); min-height: 80px; position: relative; cursor: default; }
-  .today { background-color: #2ecc71; color: white; font-weight: bold; }
-  .event { background-color: #3498db; color: white; padding: 2px 6px; margin-top: 4px; border-radius: 4px; font-size: 12px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .navbar a:hover,
+  .dropdown-btn:hover {
+    background-color: #1abc9c;
+    color: black;
+  }
 
-  /* Modal Styles */
-  #testModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000; }
-  #testModalContent { background:white; padding:20px; border-radius:8px; max-width:450px; width:90%; position:relative; box-shadow:0 4px 15px rgba(0,0,0,0.3); }
-  #closeModal { position:absolute; top:10px; right:15px; cursor:pointer; font-weight:bold; font-size:20px; }
-  #testModal h3 { margin-bottom: 15px; }
-  #testModal table { width:100%; border-collapse: collapse; }
-  #testModal table td { padding:6px 8px; border-bottom:1px solid #ddd; }
-  #testModal table td:first-child { font-weight:bold; width:40%; color:#555; }
+  .navbar a.active {
+    background-color: #1abc9c;
+    color: black;
+    font-weight: 700;
+  }
+
+  .navbar .spacer {
+    flex-grow: 1;
+  }
+
+  .dropdown-btn img {
+    height: 38px;
+    width: auto;
+    margin-right: 8px;
+  }
+
+  /* Main layout */
+  .main {
+    padding: 30px 40px;
+  }
+
+  .section {
+    display: none;
+  }
+
+  /* Course Cards */
+  #coursesSection {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .course-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+    cursor: pointer;
+  }
+
+  .course-card:hover {
+    box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+    transform: translateY(-3px);
+  }
+
+  .course-image {
+    height: 120px;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .course-content {
+    padding: 14px 16px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .course-title {
+    color: #1a73e8;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 1.05rem;
+  }
+
+  .course-subtitle {
+    color: #555;
+    font-size: 0.9rem;
+  }
+
+  /* Calendar Section */
+  .calendar-header {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+
+  .day-name,
+  .day {
+    padding: 10px;
+    text-align: center;
+    border-radius: 6px;
+  }
+
+  .day-name {
+    background-color: #1abc9c;
+    color: white;
+    font-weight: 600;
+  }
+
+  .day {
+    background-color: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    min-height: 80px;
+    position: relative;
+    cursor: default;
+  }
+
+  .today {
+    background-color: #2ecc71;
+    color: white;
+    font-weight: bold;
+  }
+
+  .event {
+    background-color: #3498db;
+    color: white;
+    padding: 2px 6px;
+    margin-top: 4px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Modal */
+  #testModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  #testModalContent {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 450px;
+    width: 90%;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  }
+
+  #closeModal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 20px;
+  }
+
+  #testModal h3 {
+    margin-bottom: 15px;
+  }
+
+  #testModal table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  #testModal table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  #testModal table td:first-child {
+    font-weight: bold;
+    width: 40%;
+    color: #555;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 1024px) {
+    .main {
+      padding: 20px;
+    }
+    .calendar-header {
+      font-size: 20px;
+    }
+    .course-card {
+      height: auto;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .navbar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .navbar a,
+    .dropdown-btn {
+      width: 100%;
+      text-align: left;
+      padding: 10px;
+    }
+
+    .main {
+      padding: 16px;
+    }
+
+    .calendar-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .navbar a,
+    .dropdown-btn {
+      font-size: 14px;
+      height: auto;
+      padding: 8px 10px;
+    }
+
+    .calendar-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .course-title {
+      font-size: 0.95rem;
+    }
+
+    .course-subtitle {
+      font-size: 0.8rem;
+    }
+
+    .main {
+      padding: 10px;
+    }
+  }
 </style>
+
 </head>
 <body>
 

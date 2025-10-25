@@ -92,105 +92,214 @@ $faculty_conn->close();
 <meta charset="UTF-8">
 <title>Course Management</title>
 <style>
-    body {
-        font-family: 'Segoe UI', sans-serif;
-        background-color: #f5f8fc;
-        margin: 0;
-        padding: 0;
-    }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f5f8fc;
+    margin: 0;
+    padding: 0;
+  }
 
+  h2 {
+    color: #003366;
+    text-align: center;
+    margin: 20px 10px;
+    font-size: 28px;
+  }
+
+  .container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto;
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  form {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  input,
+  textarea,
+  select {
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+
+  input[type="text"],
+  select {
+    width: 220px;
+    max-width: 100%;
+  }
+
+  textarea {
+    width: 100%;
+    max-width: 300px;
+    resize: vertical;
+  }
+
+  button {
+    background-color: #0066cc;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  button:hover {
+    background-color: #004c99;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 25px;
+    overflow-x: auto;
+  }
+
+  th,
+  td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  th {
+    background-color: #003366;
+    color: white;
+  }
+
+  tr:nth-child(even) {
+    background-color: #f2f6fa;
+  }
+
+  .delete-btn {
+    background-color: crimson;
+  }
+
+  .delete-btn:hover {
+    background-color: darkred;
+  }
+
+  .assign-section {
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  .search-box {
+    position: relative;
+    text-align: right;
+    margin-bottom: 10px;
+  }
+
+  .search-box input {
+    padding: 8px 10px;
+    width: 220px;
+    border: 1px solid #aaa;
+    border-radius: 6px;
+  }
+
+  @media screen and (max-width: 768px) {
     h2 {
-        color: #003366;
-        text-align: center;
-        margin-top: 20px;
+      font-size: 24px;
     }
 
     .container {
-        width: 90%;
-        margin: 20px auto;
-        background: white;
-        padding: 25px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 15px;
     }
 
     form {
-        display: flex;
-        gap: 15px;
-        flex-wrap: wrap;
-        justify-content: center;
+      flex-direction: column;
+      align-items: center;
     }
 
-    input, textarea, select {
-        padding: 10px;
-        font-size: 14px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-    }
-
-    input[type="text"], select {
-        width: 220px;
-    }
-
-    button {
-        background-color: #0066cc;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-    }
-
-    button:hover {
-        background-color: #004c99;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 25px;
-    }
-
-    th, td {
-        padding: 12px;
-        border: 1px solid #ddd;
-        text-align: center;
-    }
-
-    th {
-        background-color: #003366;
-        color: white;
-    }
-
-    tr:nth-child(even) {
-        background-color: #f2f6fa;
-    }
-
-    .delete-btn {
-        background-color: crimson;
-    }
-
-    .delete-btn:hover {
-        background-color: darkred;
-    }
-
-    .assign-section {
-        text-align: center;
-        margin-top: 10px;
+    input[type="text"],
+    select,
+    textarea {
+      width: 100%;
+      max-width: 100%;
     }
 
     .search-box {
-        position: absolute;
-        top: 20px;
-        right: 30px;
+      text-align: center;
+      margin-top: 10px;
     }
 
     .search-box input {
-        padding: 8px 10px;
-        width: 220px;
-        border: 1px solid #aaa;
-        border-radius: 6px;
+      width: 100%;
+      max-width: 300px;
     }
+
+    table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr {
+      display: block;
+    }
+
+    thead {
+      display: none;
+    }
+
+    tr {
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    td {
+      text-align: left;
+      padding: 8px 10px;
+      position: relative;
+    }
+
+    td::before {
+      content: attr(data-label);
+      font-weight: bold;
+      color: #003366;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .assign-section select {
+      width: 100%;
+    }
+
+    .assign-section button {
+      width: 100%;
+      margin-top: 8px;
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    h2 {
+      font-size: 22px;
+    }
+
+    button {
+      font-size: 13px;
+      padding: 8px 16px;
+    }
+
+    .delete-btn {
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+  }
 </style>
 </head>
 <body>

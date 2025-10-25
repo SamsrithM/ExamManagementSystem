@@ -13,12 +13,19 @@ if ($conn->connect_error) {
 
 $test_id = isset($_GET['test_id']) ? (int)$_GET['test_id'] : 0;
 
-// Fetch test details
-$test_result = $conn->query("SELECT * FROM tests WHERE test_id = $test_id");
+// Fetch test details securely
+$stmt = $conn->prepare("SELECT * FROM tests WHERE test_id = ?");
+$stmt->bind_param("i", $test_id);
+$stmt->execute();
+$test_result = $stmt->get_result();
 $test = $test_result->fetch_assoc();
+$stmt->close();
 
-// Fetch questions
-$question_result = $conn->query("SELECT * FROM questions WHERE test_id = $test_id");
+// Fetch questions securely
+$stmt_q = $conn->prepare("SELECT * FROM questions WHERE test_id = ?");
+$stmt_q->bind_param("i", $test_id);
+$stmt_q->execute();
+$question_result = $stmt_q->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -29,20 +36,26 @@ $question_result = $conn->query("SELECT * FROM questions WHERE test_id = $test_i
 <title>View Questions</title>
 <style>
 body { font-family: Arial, sans-serif; padding: 20px; background: #f4f7f9; }
-h2 { text-align: center; color: #1abc9c; margin-bottom: 10px; }
+h2 { text-align: center; color: #1abc9c; margin-bottom: 5px; }
 h3 { text-align: center; color: #34495e; margin-bottom: 20px; }
+.table-wrapper { overflow-x:auto; }
 table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; vertical-align: top; }
 th { background-color: #1abc9c; color: white; }
+tbody tr:nth-child(even) { background: #f9f9f9; }
 a.button { padding: 6px 12px; background: #1abc9c; color: white; text-decoration: none; border-radius: 5px; }
 a.button:hover { background: #159a85; }
+ul.options { padding-left: 20px; margin: 0; }
+ul.options li { margin: 2px 0; }
+.correct { color: green; font-weight: bold; }
 </style>
 </head>
 <body>
 
-<h2>Test: <?php echo $test['test_title']; ?> (ID: <?php echo $test['test_id']; ?>)</h2>
-<h3>Branch: <?php echo $test['branch']; ?> | Date: <?php echo $test['test_date']; ?> | Created By: <?php echo $test['created_by']; ?></h3>
+<h2>Test: <?php echo htmlspecialchars($test['test_title']); ?> (ID: <?php echo htmlspecialchars($test['test_id']); ?>)</h2>
+<h3>Branch: <?php echo htmlspecialchars($test['branch']); ?> | Date: <?php echo htmlspecialchars($test['test_date']); ?> | Created By: <?php echo htmlspecialchars($test['created_by']); ?></h3>
 
+<div class="table-wrapper">
 <table>
     <thead>
         <tr>
@@ -58,12 +71,25 @@ a.button:hover { background: #159a85; }
     <?php if($question_result->num_rows > 0): ?>
         <?php while($q = $question_result->fetch_assoc()): ?>
         <tr>
-            <td><?php echo $q['id']; ?></td>
-            <td><?php echo $q['question_text']; ?></td>
-            <td><?php echo $q['question_type']; ?></td>
-            <td><?php echo $q['options']; ?></td>
-            <td><?php echo $q['correct_answer']; ?></td>
-            <td><?php echo $q['descriptive_answer']; ?></td>
+            <td><?php echo htmlspecialchars($q['id']); ?></td>
+            <td><?php echo htmlspecialchars($q['question_text']); ?></td>
+            <td><?php echo htmlspecialchars($q['question_type']); ?></td>
+            <td>
+                <?php 
+                $options = json_decode($q['options'], true);
+                if($options && is_array($options)) {
+                    echo '<ul class="options">';
+                    foreach($options as $opt) {
+                        echo '<li>'.htmlspecialchars($opt).'</li>';
+                    }
+                    echo '</ul>';
+                } else {
+                    echo htmlspecialchars($q['options']);
+                }
+                ?>
+            </td>
+            <td class="correct"><?php echo htmlspecialchars($q['correct_answer']); ?></td>
+            <td><?php echo htmlspecialchars($q['descriptive_answer']); ?></td>
         </tr>
         <?php endwhile; ?>
     <?php else: ?>
@@ -71,6 +97,7 @@ a.button:hover { background: #159a85; }
     <?php endif; ?>
     </tbody>
 </table>
+</div>
 
 <p style="text-align:center;margin-top:20px;">
     <a class="button" href="view_tests.php">← Back to Tests</a>
@@ -79,4 +106,7 @@ a.button:hover { background: #159a85; }
 </body>
 </html>
 
-<?php $conn->close(); ?>
+<?php 
+$stmt_q->close();
+$conn->close();
+?>

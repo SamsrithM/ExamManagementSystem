@@ -11,7 +11,7 @@ if (!isset($_SESSION['roll_number'])) {
 $db_host = "localhost";
 $db_user = "root";
 $db_pass = "";
-
+    
 // Student DB
 $student_db = new mysqli($db_host, $db_user, $db_pass, "new_registration_data");
 if ($student_db->connect_error) die("Student DB connection failed: " . $student_db->connect_error);

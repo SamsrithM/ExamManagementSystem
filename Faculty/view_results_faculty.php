@@ -58,6 +58,7 @@ body {
     display:flex;
     justify-content:space-between;
     align-items:center;
+    flex-wrap:wrap;
     box-shadow:0 2px 4px rgba(0,0,0,0.1);
 }
 .navbar a {
@@ -81,6 +82,9 @@ body {
     font-size:28px;
     color:#34495e;
 }
+.table-wrapper {
+    overflow-x:auto;
+}
 .table {
     width:100%;
     border-collapse:collapse;
@@ -88,6 +92,7 @@ body {
     border-radius:10px;
     overflow:hidden;
     box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    min-width:700px;
 }
 .table th, .table td {
     padding:12px 15px;
@@ -106,9 +111,17 @@ body {
     color:#888;
     margin-top:30px;
 }
-@media(max-width:600px){
-    .table th, .table td { padding:8px; font-size:13px; }
-    .header h1 { font-size:22px; }
+
+/* Responsive adjustments */
+@media(max-width:768px){
+    .header h1 { font-size:24px; }
+    .table th, .table td { padding:10px; font-size:14px; }
+}
+@media(max-width:480px){
+    .navbar { flex-direction:column; align-items:flex-start; }
+    .navbar a { margin:5px 0 0 0; }
+    .header h1 { font-size:20px; }
+    .table th, .table td { padding:8px; font-size:12px; }
 }
 </style>
 </head>
@@ -129,32 +142,34 @@ body {
     </div>
 
     <?php if (!empty($results)): ?>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>S.No</th>
-                    <th>Student Roll Number</th>
-                    <th>Exam Title</th>
-                    <th>Exam Date</th>
-                    <th>Marks Obtained</th>
-                    <th>Total Marks</th>
-                    <th>Submitted At</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($results as $index => $res): ?>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
                     <tr>
-                        <td><?= $index + 1 ?></td>
-                        <td><?= htmlspecialchars($res['roll_number']) ?></td>
-                        <td><?= htmlspecialchars($res['test_title']) ?></td>
-                        <td><?= htmlspecialchars($res['test_date']) ?></td>
-                        <td><?= $res['marks_obtained'] ?></td>
-                        <td><?= $res['total_marks'] ?></td>
-                        <td><?= $res['submitted_at'] ?></td>
+                        <th>S.No</th>
+                        <th>Student Roll Number</th>
+                        <th>Exam Title</th>
+                        <th>Exam Date</th>
+                        <th>Marks Obtained</th>
+                        <th>Total Marks</th>
+                        <th>Submitted At</th>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php foreach ($results as $index => $res): ?>
+                        <tr>
+                            <td><?= $index + 1 ?></td>
+                            <td><?= htmlspecialchars($res['roll_number']) ?></td>
+                            <td><?= htmlspecialchars($res['test_title']) ?></td>
+                            <td><?= htmlspecialchars($res['test_date']) ?></td>
+                            <td><?= $res['marks_obtained'] ?></td>
+                            <td><?= $res['total_marks'] ?></td>
+                            <td><?= $res['submitted_at'] ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php else: ?>
         <p class="no-data">No students have submitted exams for the tests you created yet.</p>
     <?php endif; ?>

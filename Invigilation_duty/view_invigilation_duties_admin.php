@@ -8,22 +8,24 @@ $dbname = "room_allocation";
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
 if ($conn->connect_error) {
     die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
 }
 
-$popupMessage = ""; // to store success or error message
+$popupMessage = "";
 
-// Handle delete request
+// Handle delete request securely
 if (isset($_GET['delete_id'])) {
     $delete_id = intval($_GET['delete_id']);
-    $delete_sql = "DELETE FROM faculty_assignments WHERE id = $delete_id";
-    if ($conn->query($delete_sql) === TRUE) {
-        $popupMessage = "Faculty duty deleted successfully!";
-    } else {
-        $popupMessage = "Error deleting record: " . $conn->error;
+    if ($delete_id > 0) {
+        $stmt = $conn->prepare("DELETE FROM faculty_assignments WHERE id = ?");
+        $stmt->bind_param("i", $delete_id);
+        if ($stmt->execute()) {
+            $popupMessage = "Faculty duty deleted successfully!";
+        } else {
+            $popupMessage = "Error deleting record: " . $stmt->error;
+        }
+        $stmt->close();
     }
 }
 
@@ -48,14 +50,12 @@ body {
     margin: 0;
     padding: 40px 20px;
 }
-
 h1 {
     text-align: center;
     color: #1a73e8;
     margin-bottom: 20px;
     font-size: 2rem;
 }
-
 .table-container {
     max-width: 950px;
     margin: 0 auto;
@@ -64,36 +64,26 @@ h1 {
     border-radius: 12px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
-
 table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
 }
-
 thead {
     background: #1a73e8;
     color: #fff;
 }
-tr:hover {
-    background-color: #f1f7ff;
-}
-
-/* Prevent hover effect on header row */
 thead tr:hover {
     background-color: #1a73e8 !important;
 }
-
+tr:hover {
+    background-color: #f1f7ff;
+}
 th, td {
     padding: 12px 15px;
     text-align: left;
     border-bottom: 1px solid #eee;
 }
-
-tr:hover {
-    background-color: #f1f7ff;
-}
-
 .delete-btn {
     background-color: #e63946;
     color: white;
@@ -104,11 +94,9 @@ tr:hover {
     font-size: 14px;
     text-decoration: none;
 }
-
 .delete-btn:hover {
     background-color: #c9182b;
 }
-
 .back-btn {
     display: inline-block;
     margin: 25px auto 0 auto;
@@ -124,19 +112,15 @@ tr:hover {
     display: block;
     width: max-content;
 }
-
 .back-btn:hover {
     background: #004c99;
 }
-
 .no-data {
     text-align: center;
     padding: 30px 0;
     font-size: 1.1rem;
     color: #555;
 }
-
-/* Centered popup style */
 .popup {
     position: fixed;
     top: 50%;
@@ -152,11 +136,27 @@ tr:hover {
     z-index: 9999;
     animation: fadeOut 2.5s forwards;
 }
-
 @keyframes fadeOut {
     0% { opacity: 1; }
     80% { opacity: 1; }
     100% { opacity: 0; visibility: hidden; }
+}
+
+/* Responsive Table */
+@media(max-width: 768px){
+    .table-container { padding: 15px; width: 100%; }
+    table, thead, tbody, th, td, tr { display: block; }
+    thead tr { display: none; }
+    tr { margin-bottom: 15px; border-bottom: 1px solid #ddd; }
+    td { padding-left: 50%; position: relative; text-align: left; }
+    td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 15px;
+        top: 12px;
+        font-weight: bold;
+        color: #333;
+    }
 }
 </style>
 </head>
@@ -180,17 +180,13 @@ tr:hover {
                 <?php $count = 1; ?>
                 <?php while ($row = $result->fetch_assoc()): ?>
                     <tr>
-                        <td><?= $count++ ?></td>
-                        <td><?= htmlspecialchars($row['classroom_name']) ?></td>
-                        <td><?= htmlspecialchars($row['faculty_name']) ?></td>
-                        <td><?= htmlspecialchars($row['email_id']) ?></td>
-                        <td><?= htmlspecialchars($row['assigned_at']) ?></td>
-                        <td>
-                            <a href="?delete_id=<?= $row['id'] ?>" 
-                               class="delete-btn"
-                               onclick="return confirm('Are you sure you want to delete this duty?');">
-                               🗑️ Delete
-                            </a>
+                        <td data-label="#"><?= $count++ ?></td>
+                        <td data-label="Classroom"><?= htmlspecialchars($row['classroom_name']) ?></td>
+                        <td data-label="Faculty Name"><?= htmlspecialchars($row['faculty_name']) ?></td>
+                        <td data-label="Email ID"><?= htmlspecialchars($row['email_id']) ?></td>
+                        <td data-label="Assigned At"><?= htmlspecialchars($row['assigned_at']) ?></td>
+                        <td data-label="Action">
+                            <a href="?delete_id=<?= $row['id'] ?>" class="delete-btn" onclick="return confirm('Are you sure you want to delete this duty?');">🗑️ Delete</a>
                         </td>
                     </tr>
                 <?php endwhile; ?>
@@ -205,6 +201,12 @@ tr:hover {
 
 <?php if (!empty($popupMessage)): ?>
 <div class="popup"><?= htmlspecialchars($popupMessage) ?></div>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const popup = document.querySelector('.popup');
+    if (popup) popup.addEventListener('animationend', () => popup.remove());
+});
+</script>
 <?php endif; ?>
 
 </body>

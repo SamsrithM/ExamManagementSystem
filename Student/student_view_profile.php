@@ -44,19 +44,105 @@ $photoFile = !empty($student['photo']) && file_exists('uploads/'.$student['photo
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Student Profile</title>
 <style>
-body { font-family: Arial,sans-serif; background:#e3f2fd; margin:0; padding:20px; }
-.profile-card { display:flex; flex-wrap:wrap; background:#fff; border-radius:12px; box-shadow:0 8px 25px rgba(0,0,0,0.1); overflow:hidden; max-width:900px; margin:auto; }
-.profile-image { flex:1 1 250px; background:#f5f5f5; text-align:center; padding:30px 20px; }
-.profile-image img { width:180px; height:220px; border-radius:8px; object-fit:cover; border:2px solid #ccc; }
-.upload-btn { margin-top:15px; padding:8px 20px; background:#1a73e8; color:#fff; border:none; border-radius:6px; cursor:pointer; }
-.upload-btn:hover { background:#155ab6; }
-.profile-details { flex:2 1 500px; padding:30px 25px; }
-.profile-details h2 { margin-top:0; color:#1a73e8; margin-bottom:20px; font-size:26px; }
-.profile-details p { font-size:16px; color:#333; margin:10px 0; }
-.profile-details .label { font-weight:bold; color:#555; width:150px; display:inline-block; }
-.back-btn { display:inline-block; margin-top:20px; padding:10px 25px; background:#6c757d; color:#fff; border-radius:6px; text-decoration:none; }
-.back-btn:hover { background:#5a6268; }
-@media (max-width:768px) { .profile-card { flex-direction:column; } .profile-image,.profile-details { flex:1 1 100%; text-align:center; } .profile-details .label { display:block; margin-bottom:5px; } }
+body { 
+    font-family: Arial, sans-serif; 
+    background: #e3f2fd; 
+    margin: 0; 
+    padding: 20px; 
+}
+
+.profile-card { 
+    display: flex; 
+    flex-wrap: wrap; 
+    background: #fff; 
+    border-radius: 12px; 
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1); 
+    overflow: hidden; 
+    max-width: 900px; 
+    margin: auto; 
+}
+
+.profile-image { 
+    flex: 1 1 250px; 
+    background: #f5f5f5; 
+    text-align: center; 
+    padding: 30px 20px; 
+}
+
+.profile-image img { 
+    width: 180px; 
+    height: 220px; 
+    border-radius: 8px; 
+    object-fit: cover; 
+    border: 2px solid #ccc; 
+}
+
+.upload-btn { 
+    margin-top: 15px; 
+    padding: 8px 20px; 
+    background: #1a73e8; 
+    color: #fff; 
+    border: none; 
+    border-radius: 6px; 
+    cursor: pointer; 
+}
+
+.upload-btn:hover { 
+    background: #155ab6; 
+}
+
+.profile-details { 
+    flex: 2 1 500px; 
+    padding: 30px 25px; 
+}
+
+.profile-details h2 { 
+    margin-top: 0; 
+    color: #1a73e8; 
+    margin-bottom: 20px; 
+    font-size: 26px; 
+}
+
+.profile-details p { 
+    font-size: 16px; 
+    color: #333; 
+    margin: 10px 0; 
+}
+
+.profile-details .label { 
+    font-weight: bold; 
+    color: #555; 
+    width: 150px; 
+    display: inline-block; 
+}
+
+.back-btn { 
+    display: inline-block; 
+    margin-top: 20px; 
+    padding: 10px 25px; 
+    background: #6c757d; 
+    color: #fff; 
+    border-radius: 6px; 
+    text-decoration: none; 
+}
+
+.back-btn:hover { 
+    background: #5a6268; 
+}
+
+@media (max-width: 768px) { 
+    .profile-card { 
+        flex-direction: column; 
+    } 
+    .profile-image, .profile-details { 
+        flex: 1 1 100%; 
+        text-align: center; 
+    } 
+    .profile-details .label { 
+        display: block; 
+        margin-bottom: 5px; 
+    } 
+}
 </style>
 </head>
 <body>

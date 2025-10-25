@@ -78,98 +78,178 @@ $duties = $conn->query("SELECT * FROM faculty_duty_done ORDER BY name ASC");
     <meta charset="UTF-8">
     <title>Faculty Duty Allocation</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f4f6f8;
-            margin: 0;
-            padding: 0;
-        }
-        h1 {
-            background-color: #003366;
-            color: white;
-            text-align: center;
-            padding: 15px 0;
-        }
-        .container {
-            width: 85%;
-            margin: 20px auto;
-            background: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-            padding: 20px;
-        }
-        form {
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        input[type="text"], input[type="email"], input[type="number"] {
-            padding: 8px;
-            margin: 5px;
-            border-radius: 5px;
-            border: 1px solid #999;
-        }
-        input[type="submit"] {
-            background-color: #003366;
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        input[type="submit"]:hover {
-            background-color: #0055aa;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: center;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-        }
-        th {
-            background-color: #003366;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .message {
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        .note {
-            text-align: center;
-            color: red;
-            font-weight: bold;
-            font-size: 15px;
-            margin-top: -10px;
-        }
-        .dashboard-btn {
-            display: block;
-            width: fit-content;
-            margin: 20px auto;
-            padding: 10px 20px;
-            background-color: #cc0000;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .dashboard-btn:hover {
-            background-color: #ff3333;
-        }
-        .update-form input[type="number"] {
-            width: 60px;
-        }
-        .update-form input[type="submit"] {
-            padding: 5px 10px;
-            font-size: 13px;
-        }
-    </style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f4f6f8;
+    margin: 0;
+    padding: 0;
+  }
+
+  h1 {
+    background-color: #003366;
+    color: white;
+    text-align: center;
+    padding: 15px 0;
+    font-size: 28px;
+  }
+
+  .container {
+    width: 85%;
+    margin: 20px auto;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+  }
+
+  form {
+    margin-bottom: 30px;
+    text-align: center;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="number"] {
+    padding: 8px;
+    margin: 5px;
+    border-radius: 5px;
+    border: 1px solid #999;
+    width: 220px;
+    max-width: 90%;
+  }
+
+  input[type="submit"] {
+    background-color: #003366;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  input[type="submit"]:hover {
+    background-color: #0055aa;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    overflow-x: auto;
+  }
+
+  th,
+  td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    font-size: 15px;
+  }
+
+  th {
+    background-color: #003366;
+    color: white;
+  }
+
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+
+  .message {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 15px;
+  }
+
+  .note {
+    text-align: center;
+    color: red;
+    font-weight: bold;
+    font-size: 15px;
+    margin-top: -10px;
+  }
+
+  .dashboard-btn {
+    display: block;
+    width: fit-content;
+    margin: 20px auto;
+    padding: 10px 20px;
+    background-color: #cc0000;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+  }
+
+  .dashboard-btn:hover {
+    background-color: #ff3333;
+  }
+
+  .update-form input[type="number"] {
+    width: 60px;
+  }
+
+  .update-form input[type="submit"] {
+    padding: 5px 10px;
+    font-size: 13px;
+  }
+
+  /* Responsive Styles */
+  @media screen and (max-width: 768px) {
+    h1 {
+      font-size: 24px;
+      padding: 12px 0;
+    }
+
+    .container {
+      width: 95%;
+      padding: 15px;
+    }
+
+    table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr {
+      display: block;
+    }
+
+    thead {
+      display: none;
+    }
+
+    tr {
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    td {
+      text-align: left;
+      padding: 8px 10px;
+      position: relative;
+    }
+
+    td::before {
+      content: attr(data-label);
+      font-weight: bold;
+      color: #003366;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .update-form {
+      text-align: left;
+    }
+
+    .update-form input[type="submit"] {
+      margin-top: 8px;
+    }
+  }
+</style>
 </head>
 <body>
 

@@ -99,7 +99,6 @@ if (!empty($conn)) {
         min-height: 100vh;
     }
 
-    /* Sidebar */
     .sidebar {
         width: 230px;
         background-color: #003366;
@@ -130,11 +129,11 @@ if (!empty($conn)) {
         font-size: 16px;
     }
 
-    .sidebar a:hover, .sidebar a.active {
+    .sidebar a:hover,
+    .sidebar a.active {
         background-color: #0059b3;
     }
 
-    /* Main Content */
     .main {
         margin-left: 230px;
         padding: 40px;
@@ -143,8 +142,13 @@ if (!empty($conn)) {
     }
 
     @keyframes fadeIn {
-        from {opacity: 0;}
-        to {opacity: 1;}
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
     }
 
     h1 {
@@ -152,7 +156,6 @@ if (!empty($conn)) {
         margin-bottom: 20px;
     }
 
-    /* Dashboard Buttons */
     .dashboard-btns {
         display: flex;
         justify-content: center;
@@ -171,7 +174,7 @@ if (!empty($conn)) {
         cursor: pointer;
         position: relative;
         animation: move 3s infinite alternate ease-in-out;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         transition: transform 0.2s;
     }
 
@@ -180,11 +183,15 @@ if (!empty($conn)) {
     }
 
     @keyframes move {
-        0% { left: 0; }
-        100% { left: 20px; }
+        0% {
+            left: 0;
+        }
+
+        100% {
+            left: 20px;
+        }
     }
 
-    /* Student List Grid */
     .student-list {
         display: none;
         grid-template-columns: repeat(3, 1fr);
@@ -196,7 +203,7 @@ if (!empty($conn)) {
         background: white;
         padding: 20px;
         border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         text-align: center;
     }
 
@@ -245,7 +252,6 @@ if (!empty($conn)) {
         transform: scale(1.05);
     }
 
-    /* Student Cards */
     .student-cards {
         display: none;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -257,7 +263,7 @@ if (!empty($conn)) {
     .student-card {
         background: white;
         border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         padding: 20px;
         text-align: center;
         transition: transform 0.3s ease;
@@ -316,7 +322,6 @@ if (!empty($conn)) {
         background: #5a6268;
     }
 
-    /* Top-right Logout */
     .logout {
         position: absolute;
         right: 20px;
@@ -333,6 +338,101 @@ if (!empty($conn)) {
         background-color: darkred;
     }
 
+    @media screen and (max-width: 1024px) {
+        .dashboard-btns {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .student-list {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .student-cards {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
+    }
+
+    @media screen and (max-width: 768px) {
+        body {
+            flex-direction: column;
+        }
+
+        .sidebar {
+            width: 100%;
+            height: auto;
+            position: relative;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px 10px;
+        }
+
+        .sidebar h2 {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .sidebar a {
+            width: auto;
+            margin: 5px;
+            font-size: 14px;
+            padding: 8px 10px;
+        }
+
+        .main {
+            margin-left: 0;
+            padding: 20px;
+        }
+
+        .dashboard-btns {
+            gap: 20px;
+        }
+
+        .student-list {
+            grid-template-columns: 1fr;
+        }
+
+        .student-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .logout {
+            position: static;
+            margin-top: 10px;
+        }
+    }
+
+    @media screen and (max-width: 480px) {
+        h1 {
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .move-btn {
+            font-size: 16px;
+            padding: 14px 25px;
+        }
+
+        .student-photo {
+            width: 80px;
+            height: 80px;
+        }
+
+        .student-name {
+            font-size: 16px;
+        }
+
+        .student-details {
+            font-size: 13px;
+        }
+
+        .back-btn {
+            width: 100%;
+            font-size: 14px;
+        }
+    }
 </style>
 </head>
 <body>

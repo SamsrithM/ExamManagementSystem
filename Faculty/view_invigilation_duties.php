@@ -59,31 +59,118 @@ $stmt_hours->close();
 <title>Invigilation Duties - <?php echo $faculty_name; ?></title>
 <style>
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin:0; padding:0;
-    background:#f5f7fa; color:#333;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f7fa;
+  color: #333;
 }
-.container { max-width:1200px; margin:50px auto; padding:20px; }
-h1 { text-align:center; font-size:2.4em; color:#0d47a1; margin-bottom:10px; }
-.hours-display { text-align:center; font-size:1.2em; margin-bottom:30px; color:#0d47a1; }
-.cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:25px; }
+
+.container {
+  max-width: 1200px;
+  margin: 50px auto;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  font-size: 2.2em;
+  color: #0d47a1;
+  margin-bottom: 10px;
+}
+
+.hours-display {
+  text-align: center;
+  font-size: 1.2em;
+  margin-bottom: 25px;
+  color: #0d47a1;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
 .card {
-    background:#fff; border-radius:12px; padding:25px;
-    box-shadow:0 8px 20px rgba(0,0,0,0.1);
-    transition:transform 0.3s, box-shadow 0.3s;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
 }
-.card:hover { transform:translateY(-5px); box-shadow:0 15px 30px rgba(0,0,0,0.15); }
-.card h2 { font-size:1.3em; color:#0d47a1; margin-bottom:12px; }
-.card p { margin:8px 0; font-size:1em; color:#333; }
-.card button { margin-right:10px; padding:8px 15px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; }
-.ok-btn { background-color:#4CAF50; color:white; }
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+}
+
+.card h2 {
+  font-size: 1.2em;
+  color: #0d47a1;
+  margin-bottom: 10px;
+}
+
+.card p {
+  margin: 6px 0;
+  font-size: 0.95em;
+  color: #333;
+}
+
+.card button {
+  margin-top: 10px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.ok-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
 .dashboard-btn {
-    display:block; width:220px; margin:40px auto 0; padding:12px 0; text-align:center;
-    background:#0d47a1; color:#fff; font-weight:bold; text-decoration:none; border-radius:8px;
-    box-shadow:0 5px 15px rgba(0,0,0,0.2); transition:0.3s;
+  display: block;
+  width: 200px;
+  margin: 30px auto 0;
+  padding: 10px 0;
+  text-align: center;
+  background: #0d47a1;
+  color: #fff;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 8px;
+  box-shadow: 0 5px 12px rgba(0,0,0,0.2);
+  transition: 0.3s;
 }
-.dashboard-btn:hover { background:#08306b; transform:translateY(-2px); }
-.no-duty { text-align:center; font-size:1.3em; margin-top:30px; color:#0d47a1; }
+
+.dashboard-btn:hover {
+  background: #08306b;
+  transform: translateY(-2px);
+}
+
+.no-duty {
+  text-align: center;
+  font-size: 1.2em;
+  margin-top: 25px;
+  color: #0d47a1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+  .card {
+    text-align: center;
+  }
+  .card button {
+    width: 100%;
+    margin-top: 12px;
+  }
+}
 </style>
 </head>
 <body>

@@ -1,13 +1,13 @@
 <?php
 // view_invigilation_duties.php
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "room_allocation";
+$host = getenv('DB_HOST') ?: 'localhost';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('ROOM_DB') ?: 'room_allocation';
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+// Create DB connection
+$conn = new mysqli($host, $user, $pass, $db_name);
 if ($conn->connect_error) {
     die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
 }

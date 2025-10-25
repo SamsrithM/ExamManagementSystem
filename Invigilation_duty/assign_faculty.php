@@ -1,11 +1,13 @@
 <?php
 header('Content-Type: application/json');
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "room_allocation";
+// Use environment variables for deployment
+$host = getenv('DB_HOST') ?: 'localhost';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('ROOM_DB') ?: 'room_allocation';
 
+// Read input JSON
 $data = json_decode(file_get_contents("php://input"), true);
 $classroom_id = $data['classroom_id'] ?? null;
 $slot_date = $data['slot_date'] ?? null;
@@ -16,13 +18,14 @@ if (!$classroom_id || !$slot_date || !$exam_time) {
     exit;
 }
 
-$conn = new mysqli($servername, $username, $password, $dbname);
+// DB connection
+$conn = new mysqli($host, $user, $pass, $db_name);
 if ($conn->connect_error) {
-    echo json_encode(['status' => 'error', 'message' => 'DB connection failed']);
+    echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
     exit;
 }
 
-// Get classroom name safely
+// Get classroom name
 $stmt = $conn->prepare("SELECT classroom_name FROM generated_classrooms WHERE id = ?");
 $stmt->bind_param("i", $classroom_id);
 $stmt->execute();
@@ -30,7 +33,7 @@ $stmt->bind_result($classroom_name);
 $stmt->fetch();
 $stmt->close();
 
-// Check if classroom already assigned
+// Check if already assigned
 $stmt = $conn->prepare("SELECT faculty_name, email_id FROM faculty_assignments WHERE classroom_id = ?");
 $stmt->bind_param("i", $classroom_id);
 $stmt->execute();
@@ -89,7 +92,7 @@ if (count($eligible_faculty) === 0) {
     exit;
 }
 
-// Randomly assign
+// Random assignment
 $assigned = $eligible_faculty[array_rand($eligible_faculty)];
 $faculty_name = $assigned['faculty_name'];
 $email_id = $assigned['faculty_email'];

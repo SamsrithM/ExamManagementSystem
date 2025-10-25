@@ -1,210 +1,47 @@
 <?php
 session_start();
-require 'PHPMailer/src/PHPMailer.php';
-require 'PHPMailer/src/SMTP.php';
-require 'PHPMailer/src/Exception.php';
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-// Database connections
-$host = "localhost";
-$user = "root";
-$pass = "";
-
-$new_reg_conn = new mysqli($host, $user, $pass, "new_registration_data");
-$student_conn = new mysqli($host, $user, $pass, "student_data");
-$faculty_conn = new mysqli($host, $user, $pass, "faculty_data");
-$admin_conn   = new mysqli($host, $user, $pass, "admin_data");
-
-if ($new_reg_conn->connect_error || $student_conn->connect_error || $faculty_conn->connect_error || $admin_conn->connect_error) {
-    die("Database connection failed.");
+// Ensure a reset email is provided
+if (!isset($_SESSION['reset_email']) || !isset($_SESSION['user_type'])) {
+    header("Location: forgot_password.php");
+    exit;
 }
 
-$message = '';
-$show_otp_form = false;
-$otp_remaining = 0;
+$reset_email = $_SESSION['reset_email'];
+$user_type   = $_SESSION['user_type']; // 'student' or 'faculty'
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Use environment variables for deployment
+$host = getenv('DB_HOST') ?: 'localhost';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: '';
+$db_student = getenv('STUDENT_DB') ?: 'student_registration_data';
+$db_faculty = getenv('FACULTY_DB') ?: 'new_registration_data';
 
-    $role = $_POST['role'] ?? '';
+// Choose DB based on user type
+$db_name = ($user_type === 'faculty') ? $db_faculty : $db_student;
 
-    // Step 1: Send OTP
-    if (isset($_POST['send_otp'])) {
-        if ($role === 'student') {
-            $roll_number = trim($_POST['roll_number'] ?? '');
-            if (empty($roll_number)) {
-                $message = "Please enter your roll number.";
-            } else {
-                $stmt = $new_reg_conn->prepare("SELECT institute_email FROM students_new_data WHERE roll_number=?");
-                $stmt->bind_param("s", $roll_number);
-                $stmt->execute();
-                $stmt->bind_result($email_db);
-                $stmt->fetch();
-                $stmt->close();
-
-                if (empty($email_db)) {
-                    $message = "Roll number not registered.";
-                } else {
-                    $otp = rand(100000, 999999);
-                    $_SESSION['otp'] = $otp;
-                    $_SESSION['otp_role'] = $role;
-                    $_SESSION['otp_roll'] = $roll_number;
-                    $_SESSION['otp_email'] = $email_db;
-                    $_SESSION['otp_time'] = time();
-
-                    $mail = new PHPMailer(true);
-                    try {
-                        $mail->isSMTP();
-                        $mail->Host       = 'smtp.gmail.com';
-                        $mail->SMTPAuth   = true;
-                        $mail->Username   = 'mahammadirfan4242@gmail.com';
-                        $mail->Password   = 'iwwa iyel vzcs ifnu'; // Gmail App Password
-                        $mail->SMTPSecure = 'tls';
-                        $mail->Port       = 587;
-
-                        $mail->setFrom('mahammadirfan4242@gmail.com', 'Exam Management System');
-                        $mail->addAddress($email_db);
-
-                        $mail->isHTML(true);
-                        $mail->Subject = 'Password Reset OTP';
-                        $mail->Body    = "Your OTP for password reset is: <b>$otp</b>. It is valid for 10 minutes.";
-
-                        $mail->send();
-                        $message = "OTP has been sent to your email.";
-                        $show_otp_form = true;
-                        $otp_remaining = 600;
-                    } catch (Exception $e) {
-                        $message = "Could not send OTP. Mailer Error: {$mail->ErrorInfo}";
-                    }
-                }
-            }
-        } elseif ($role === 'faculty' || $role === 'admin') {
-            $email = trim($_POST['email'] ?? '');
-            if (empty($email)) {
-                $message = "Please enter your registered email.";
-            } else {
-                if ($role === 'faculty') {
-                    $stmt = $new_reg_conn->prepare("SELECT email FROM faculty_new_data WHERE email=?");
-                } else { // admin
-                    $stmt = $admin_conn->prepare("SELECT email FROM admin WHERE email=?");
-                }
-                $stmt->bind_param("s", $email);
-                $stmt->execute();
-                $stmt->store_result();
-
-                if ($stmt->num_rows === 0) {
-                    $message = "Email not registered for the selected role.";
-                } else {
-                    $otp = rand(100000, 999999);
-                    $_SESSION['otp'] = $otp;
-                    $_SESSION['otp_email'] = $email;
-                    $_SESSION['otp_role'] = $role;
-                    $_SESSION['otp_time'] = time();
-
-                    if ($role !== 'admin') {
-                        // Send OTP email for faculty
-                        $mail = new PHPMailer(true);
-                        try {
-                            $mail->isSMTP();
-                            $mail->Host       = 'smtp.gmail.com';
-                            $mail->SMTPAuth   = true;
-                            $mail->Username   = 'mahammadirfan4242@gmail.com';
-                            $mail->Password   = 'iwwa iyel vzcs ifnu';
-                            $mail->SMTPSecure = 'tls';
-                            $mail->Port       = 587;
-
-                            $mail->setFrom('mahammadirfan4242@gmail.com', 'Exam Management System');
-                            $mail->addAddress($email);
-
-                            $mail->isHTML(true);
-                            $mail->Subject = 'Password Reset OTP';
-                            $mail->Body    = "Your OTP for password reset is: <b>$otp</b>. It is valid for 10 minutes.";
-
-                            $mail->send();
-                            $message = "OTP has been sent to your email.";
-                        } catch (Exception $e) {
-                            $message = "Could not send OTP. Mailer Error: {$mail->ErrorInfo}";
-                        }
-                    } else {
-                        $message = "OTP generated. Please enter OTP and new password.";
-                    }
-                    $show_otp_form = true;
-                    $otp_remaining = 600;
-                }
-                $stmt->close();
-            }
-        } else {
-            $message = "Please select a valid role.";
-        }
-    }
-
-    // Step 2: Validate OTP & Reset Password
-    if (isset($_POST['reset_password'])) {
-        $otp_input = trim($_POST['otp'] ?? '');
-        $new_password = trim($_POST['new_password'] ?? '');
-        $confirm_password = trim($_POST['confirm_password'] ?? '');
-        $role = $_SESSION['otp_role'] ?? '';
-
-        if (empty($otp_input) || empty($new_password) || empty($confirm_password)) {
-            $message = "Please fill all fields.";
-            $show_otp_form = true;
-        } elseif ($new_password !== $confirm_password) {
-            $message = "Passwords do not match.";
-            $show_otp_form = true;
-        } elseif (!isset($_SESSION['otp'], $_SESSION['otp_time'])) {
-            $message = "Session expired. Please request OTP again.";
-        } elseif (time() - $_SESSION['otp_time'] > 600) {
-            $message = "OTP expired. Please request a new one.";
-            unset($_SESSION['otp'], $_SESSION['otp_email'], $_SESSION['otp_roll'], $_SESSION['otp_time'], $_SESSION['otp_role']);
-        } elseif ($_SESSION['otp'] != $otp_input) {
-            $message = "Invalid OTP. Please try again.";
-            $show_otp_form = true;
-        } else {
-            if ($role === 'student') {
-                $roll_number = $_SESSION['otp_roll'];
-                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                $stmt = $student_conn->prepare("UPDATE students SET student_password=? WHERE student_username=?");
-                $stmt->bind_param("ss", $hashed_password, $roll_number);
-            } elseif ($role === 'faculty') {
-                $email = $_SESSION['otp_email'];
-                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                $stmt = $faculty_conn->prepare("UPDATE faculty SET password=? WHERE username=?");
-                $stmt->bind_param("ss", $hashed_password, $email);
-            } elseif ($role === 'admin') {
-                $email = $_SESSION['otp_email'];
-                $stmt = $admin_conn->prepare("UPDATE admin SET admin_password=? WHERE email=?");
-                $stmt->bind_param("ss", $new_password, $email);
-            }
-
-            if ($stmt && $stmt->execute()) {
-                $message = "Password updated successfully! You can now <a href='login.php'>login</a>.";
-                unset($_SESSION['otp'], $_SESSION['otp_email'], $_SESSION['otp_roll'], $_SESSION['otp_time'], $_SESSION['otp_role']);
-            } else {
-                $message = "Error updating password: " . ($stmt ? $stmt->error : "Invalid role.");
-                $show_otp_form = true;
-            }
-            if ($stmt) $stmt->close();
-        }
-    }
+// Connect to database
+$conn = new mysqli($host, $user, $pass, $db_name);
+if ($conn->connect_error) {
+    die("<h2 style='color:red; text-align:center;'>Database connection failed.</h2>");
 }
 
-// OTP remaining time
-if ($show_otp_form && isset($_SESSION['otp_time'])) {
-    $otp_remaining = 600 - (time() - $_SESSION['otp_time']);
-    if ($otp_remaining <= 0) {
-        $otp_remaining = 0;
-        unset($_SESSION['otp'], $_SESSION['otp_email'], $_SESSION['otp_roll'], $_SESSION['otp_time'], $_SESSION['otp_role']);
-        $message = "OTP expired. Please request a new one.";
-        $show_otp_form = false;
-    }
-}
+// Fetch user record
+$table = ($user_type === 'faculty') ? 'faculty_new_data' : 'students';
+$stmt = $conn->prepare("SELECT id, email FROM $table WHERE email = ?");
+$stmt->bind_param("s", $reset_email);
+$stmt->execute();
+$result = $stmt->get_result();
 
-$student_conn->close();
-$faculty_conn->close();
-$admin_conn->close();
-$new_reg_conn->close();
+if ($result->num_rows !== 1) {
+    die("<h2 style='color:red; text-align:center;'>Invalid password reset request.</h2>");
+}
+$user = $result->fetch_assoc();
+$stmt->close();
+$conn->close();
 ?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

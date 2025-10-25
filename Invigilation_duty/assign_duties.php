@@ -1,20 +1,31 @@
 <?php
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "room_allocation";
+session_start();
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+// Ensure admin is logged in (adjust session variable as needed)
+if (!isset($_SESSION['admin_user'])) {
+    header("Location: admin_login.php");
+    exit;
+}
+
+// Use environment variables for deployment
+$host = getenv('DB_HOST') ?: 'localhost';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('ROOM_DB') ?: 'room_allocation';
+
+// Create database connection
+$conn = new mysqli($host, $user, $pass, $db_name);
 if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
+    die("<h2 style='color:red; text-align:center;'>Database connection failed.</h2>");
 }
 
 // Fetch all classrooms
 $sql = "SELECT * FROM generated_classrooms ORDER BY id ASC";
 $result = $conn->query($sql);
 ?>
+
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">

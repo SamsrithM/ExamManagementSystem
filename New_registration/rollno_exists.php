@@ -106,7 +106,7 @@ a:hover {
   <div class="alert-icon" aria-label="Error icon" role="img">❌</div>
   <h3>Login Failed!</h3>
   <p>Invalid username or password. Please try again.</p>
-  <a href="http://localhost/Exam_Management_System/Ems_start/frontpage.php">Back to Home</a>
+  <a href="Ems_start/frontpage.php">Back to Home</a>
 </div>
 
 </body>

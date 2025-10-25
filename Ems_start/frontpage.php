@@ -226,10 +226,10 @@
     <p class="tagline">Efficiently managing exams and results</p>
 
     <div class="btn-group">
-      <button class="btn btn-admin" onclick="location.href='http://localhost/Exam_Management_System/Admin/admin_login.php'">Admin Login</button>
-      <button class="btn btn-faculty" onclick="location.href='http://localhost/Exam_Management_System/Faculty/faculty_login.php'">Faculty Login</button>
-      <button class="btn btn-student" onclick="location.href='http://localhost/Exam_Management_System/Student/student_login.php'">Student Login</button>
-      <a href="http://localhost/Exam_Management_System/new_registration/registration_page.php" class="back-link">New Registration</a>
+      <button class="btn btn-admin" onclick="location.href='Admin/admin_login.php'">Admin Login</button>
+      <button class="btn btn-faculty" onclick="location.href='Faculty/faculty_login.php'">Faculty Login</button>
+      <button class="btn btn-student" onclick="location.href='Student/student_login.php'">Student Login</button>
+      <a href="new_registration/registration_page.php" class="back-link">New Registration</a>
     </div>
 
     <div class="support-info">

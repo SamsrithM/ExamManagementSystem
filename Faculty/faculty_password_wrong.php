@@ -139,7 +139,7 @@ a:hover {
     <div class="success-icon" aria-label="Failure icon" role="img">❌</div>
     <h1>Login Failed!</h1>
     <h3>Password Invalid!</h3>
-    <a href="http://localhost/Exam_Management_System/Faculty/faculty_login.php">Go To Login Page</a>
+    <a href="Faculty/faculty_login.php">Go To Login Page</a>
   </div>
 
 </body>

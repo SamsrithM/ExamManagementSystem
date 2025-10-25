@@ -365,10 +365,10 @@ if (!empty($faculty_email) && empty($test_db_error)) {
   </div>
   <a href="#" id="dashboardLink" class="active">🏠 Dashboard</a>
   <a href="#" id="coursesLink">📚 Courses</a>
-  <a href="http://localhost/Exam_Management_System/Faculty/choosing_exam_slots.php">✅ Book Slots</a>
-  <a href="http://localhost/Exam_Management_System/Exam/create_test.php">📝 Create Test</a>
-  <a href="http://localhost/Exam_Management_System/Faculty/view_tests.php">✅ Created Test</a>
-  <a href="http://localhost/Exam_Management_System/Faculty/publish_exam.php">📢 Publish Test</a>
+  <a href="Faculty/choosing_exam_slots.php">✅ Book Slots</a>
+  <a href="Exam/create_test.php">📝 Create Test</a>
+  <a href="Faculty/view_tests.php">✅ Created Test</a>
+  <a href="Faculty/publish_exam.php">📢 Publish Test</a>
   <a href="view_results_faculty.php">📊 View Results</a>
   <a href="view_invigilation_duties.php">⏰ View Invigilator Duty</a>
   <div class="spacer"></div>

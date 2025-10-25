@@ -112,8 +112,8 @@ a:hover {
     <div class="success-icon" aria-label="Failure icon" role="img">❌</div>
     <h1>Login Failed!</h1>
     <h3>Username Not Found!</h3>
-    <a href="http://localhost/Exam_Management_System/Student/student_login.php">Go To Login Page</a>
-    <a href="http://localhost/Exam_Management_System/new_registration/registration_page.php">Go To Registration Page</a>
+    <a href="Student/student_login.php">Go To Login Page</a>
+    <a href="new_registration/registration_page.php">Go To Registration Page</a>
   </div>
 
 </body>

@@ -287,7 +287,7 @@ function showModal() {
 
 // Redirect to dashboard
 function redirectDashboard() {
-    window.location.href = 'http://localhost/Exam_Management_System/Faculty/faculty_front_page.php'; // change to your dashboard path
+    window.location.href = 'Faculty/faculty_front_page.php'; // change to your dashboard path
 }
 
 // Optional: auto-redirect after 3 seconds

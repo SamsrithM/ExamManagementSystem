@@ -109,7 +109,7 @@ a:hover {
   <div class="success-container">
     <div class="success-icon" aria-label="Success checkmark" role="img">✔️</div>
     <h1>Login Successful!</h1>
-    <a href="http://localhost/Exam_Management_System/Student/student_front_page.php">Go To Dashboard</a>
+    <a href="Student/student_front_page.php">Go To Dashboard</a>
   </div>
 
 </body>

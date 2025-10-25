@@ -143,7 +143,7 @@ button {
 
     <div id="assigned-faculty"></div>
 
-    <button class="dashboard-btn" onclick="window.location.href='http://localhost/Exam_Management_System/Admin/admin_front_page.php'">
+    <button class="dashboard-btn" onclick="window.location.href='Admin/admin_front_page.php'">
         ← Back to Dashboard
     </button>
 </div>

@@ -192,10 +192,10 @@ th, td {
                 <?php endwhile; ?>
             </tbody>
         </table>
-        <a href="http://localhost/Exam_Management_System/Admin/admin_front_page.php" class="back-btn">← Return to Dashboard</a>
+        <a href="Admin/admin_front_page.php" class="back-btn">← Return to Dashboard</a>
     <?php else: ?>
         <div class="no-data">No invigilation duties have been assigned yet.</div>
-        <a href="http://localhost/Exam_Management_System/Admin/admin_front_page.php" class="back-btn">← Return to Dashboard</a>
+        <a href="Admin/admin_front_page.php" class="back-btn">← Return to Dashboard</a>
     <?php endif; ?>
 </div>
 

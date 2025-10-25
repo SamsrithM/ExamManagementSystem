@@ -292,7 +292,7 @@ document.getElementById('createTestForm').addEventListener('submit', function(e)
 // Close modal and redirect
 okButton.addEventListener('click', () => {
   modal.style.display = "none";
-  window.location.href = 'http://localhost/Exam_Management_System/Exam/creating_test.php';
+  window.location.href = 'Exam/creating_test.php';
 });
 </script>
 

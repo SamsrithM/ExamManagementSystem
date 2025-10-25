@@ -152,7 +152,7 @@ session_start();
   <div class="success-container">
     <div class="success-icon" aria-label="Success checkmark" role="img">✔️</div>
     <h1>Login Successful!</h1>
-    <a href="http://localhost/Exam_Management_System/Admin/admin_front_page.php">Go To Dashboard</a>
+    <a href="Admin/admin_front_page.php">Go To Dashboard</a>
   </div>
 
 </body>

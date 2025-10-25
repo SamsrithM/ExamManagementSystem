@@ -170,10 +170,10 @@ button:hover {
       </div>
 
       <button type="submit">Login</button>
-      <a href="http://localhost/Exam_Management_System/forget_password/password.php" class="back-link">Forgot Password?</a>
+      <a href="forget_password/password.php" class="back-link">Forgot Password?</a>
     </form>
 
-    <a href="http://localhost/Exam_Management_System/Ems_start/frontpage.php" class="back-link">← Back to Home</a>
+    <a href="Ems_start/frontpage.php" class="back-link">← Back to Home</a>
   </div>
 
   <script>

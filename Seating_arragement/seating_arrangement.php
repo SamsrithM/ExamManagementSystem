@@ -318,14 +318,14 @@ function showNotification(message, type = 'success') {
                 saveClassrooms(); // Call your existing save function
                 // Redirect after saving
                 setTimeout(() => {
-                    window.location.href = 'http://localhost/Exam_Management_System/Admin/admin_front_page.php';
+                    window.location.href = 'Admin/admin_front_page.php';
                 }, 500); // short delay to allow save notification
             } else {
                 // Redirect without saving
-                window.location.href = 'http://localhost/Exam_Management_System/Admin/admin_front_page.php';
+                window.location.href = 'Admin/admin_front_page.php';
             }
         } else {
-            window.location.href = 'http://localhost/Exam_Management_System/Admin/admin_front_page.php';
+            window.location.href = 'Admin/admin_front_page.php';
         }
     });
 

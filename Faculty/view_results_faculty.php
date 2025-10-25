@@ -131,7 +131,7 @@ body {
     <div>Faculty: <?= htmlspecialchars($faculty_email) ?></div>
     <div>
         <a href="faculty_front_page.php">Dashboard</a>
-        <a href="http://localhost/Exam_Management_System/Ems_start/frontpage.php">Logout</a>
+        <a href="Ems_start/frontpage.php">Logout</a>
     </div>
 </div>
 

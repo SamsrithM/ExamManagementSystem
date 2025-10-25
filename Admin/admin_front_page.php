@@ -440,24 +440,24 @@ if (!empty($conn)) {
 <div class="sidebar">
     <h2>Admin Panel</h2>
     <a href="#" id="dashboardBtn" class="active">🏠 Dashboard</a>
-    <a href="http://localhost/Exam_Management_System/Admin/student_list_admin.php" id="studentListBtn">👥 Student List</a>
-    <a href="http://localhost/Exam_Management_System/Admin/faculty_list.php" id="facultyListBtn">👨‍🏫 Faculty List</a>
-    <a href="http://localhost/Exam_Management_System/Admin/course_management.php">📚 Courses to Faculties</a>
-    <a href="http://localhost/Exam_Management_System/Admin/course_management_student.php">📚 Courses to Students</a>
-    <a href="http://localhost/Exam_Management_System/Admin/free_slots.php">🔓 Exam Slots</a>
-    <a href="http://localhost/Exam_Management_System/Admin/allocate_duties.php">🗂️ Allocate Duties</a>
-    <a href="http://localhost/Exam_Management_System/Admin/view_exam_slot.php">🔍 Selected Slots</a>
-    <a href="http://localhost/Exam_Management_System/Invigilation_duty/view_invigilation_duties_admin.php" id="viewDutiesBtn">📝 View Invigilation Duties</a>
+    <a href="Admin/student_list_admin.php" id="studentListBtn">👥 Student List</a>
+    <a href="Admin/faculty_list.php" id="facultyListBtn">👨‍🏫 Faculty List</a>
+    <a href="Admin/course_management.php">📚 Courses to Faculties</a>
+    <a href="Admin/course_management_student.php">📚 Courses to Students</a>
+    <a href="Admin/free_slots.php">🔓 Exam Slots</a>
+    <a href="Admin/allocate_duties.php">🗂️ Allocate Duties</a>
+    <a href="Admin/view_exam_slot.php">🔍 Selected Slots</a>
+    <a href="Invigilation_duty/view_invigilation_duties_admin.php" id="viewDutiesBtn">📝 View Invigilation Duties</a>
     <a href="admin_upload_photo.php">👤 View Profile</a>
-    <a href="http://localhost/Exam_Management_System/Ems_start/frontpage.php" class="logout">🚪 Logout</a>
+    <a href="Ems_start/frontpage.php" class="logout">🚪 Logout</a>
 </div>
 
 <div class="main">
     <div id="dashboardSection">
         <h1>Welcome, <?php echo htmlspecialchars($_SESSION['admin_user']); ?></h1>
         <div class="dashboard-btns">
-            <button class="move-btn" onclick="window.location.href='http://localhost/Exam_Management_System/Invigilation_duty/assign_duties.php'">🎓 Assign Invigilator Duties</button>
-            <button class="move-btn" onclick="window.location.href='http://localhost/Exam_Management_System/Seating_arragement/seating_arrangement.php'">🪑 Seating Arrangement</button>
+            <button class="move-btn" onclick="window.location.href='Invigilation_duty/assign_duties.php'">🎓 Assign Invigilator Duties</button>
+            <button class="move-btn" onclick="window.location.href='Seating_arragement/seating_arrangement.php'">🪑 Seating Arrangement</button>
         </div>
     </div>
 

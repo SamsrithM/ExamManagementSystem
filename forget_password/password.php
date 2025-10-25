@@ -349,7 +349,7 @@ button:hover {
         </script>
     <?php endif; ?>
 
-    <a class="back-login" href="http://localhost/Exam_Management_System/Ems_start/frontpage.php">&#8592; Back to Login</a>
+    <a class="back-login" href="Ems_start/frontpage.php">&#8592; Back to Login</a>
 </div>
 
 </body>

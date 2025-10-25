@@ -163,7 +163,7 @@ session_start();
     <div class="success-icon" aria-label="Failure icon" role="img">❌</div>
     <h1>Login Failed!</h1>
     <h3>Password Invalid!</h3>
-    <a href="http://localhost/Exam_Management_System/Admin/admin_login.php">Go To Login Page</a>
+    <a href="Admin/admin_login.php">Go To Login Page</a>
   </div>
 
 </body>

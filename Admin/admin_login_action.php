@@ -11,7 +11,7 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
-
+ 
 // Only handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input_user = isset($_POST['username']) ? trim($_POST['username']) : '';

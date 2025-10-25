@@ -5,7 +5,7 @@ if (!isset($_SESSION['roll_number'])) {
     header("Location: student_login.php");
     exit;
 }
-
+    
 $host = "localhost";
 $user = "root";
 $pass = "";

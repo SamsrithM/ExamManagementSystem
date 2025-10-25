@@ -101,7 +101,7 @@ a:hover {
   <div class="alert-icon" aria-label="Warning icon" role="img">❌</div>
   <h3>Username Found!</h3>
   <p>Your username exists, please login with your credentials.</p>
-  <a href="Ems_start/frontpage.php">Go to Login</a>
+  <a href="/index.php">Go to Login</a>
 </div>
 
 </body>

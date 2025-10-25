@@ -294,7 +294,7 @@
       <button type="submit">Register</button>
     </form>
 
-    <a href="Ems_start/frontpage.php" class="back-link">← Back to Home</a>
+    <a href="/index.php" class="back-link">← Back to Home</a>
   </div>
 
   <script>

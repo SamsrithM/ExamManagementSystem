@@ -451,7 +451,7 @@ if (!empty($conn)) {
     <a href="Admin/view_exam_slot.php">🔍 Selected Slots</a>
     <a href="Invigilation_duty/view_invigilation_duties_admin.php" id="viewDutiesBtn">📝 View Invigilation Duties</a>
     <a href="admin_upload_photo.php">👤 View Profile</a>
-    <a href="Ems_start/frontpage.php" class="logout">🚪 Logout</a>
+    <a href="/index.php" class="logout">🚪 Logout</a>
 </div>
 
 <div class="main">

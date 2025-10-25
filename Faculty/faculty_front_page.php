@@ -368,7 +368,7 @@ if (!empty($faculty_email) && empty($test_db_error)) {
   <a href="view_invigilation_duties.php">⏰ View Invigilator Duty</a>
   <div class="spacer"></div>
   <a href="faculty_view_profile.php">👤 View Profile</a>
-  <a href="../Ems_start/frontpage.php">🚪 Logout</a>
+  <a href="/index.php">🚪 Logout</a>
 </div>
 
 <div class="main">

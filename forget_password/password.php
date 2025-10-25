@@ -186,7 +186,7 @@ button:hover {
         </script>
     <?php endif; ?>
 
-    <a class="back-login" href="Ems_start/frontpage.php">&#8592; Back to Login</a>
+    <a class="back-login" href="/index.php">&#8592; Back to Login</a>
 </div>
 
 </body>

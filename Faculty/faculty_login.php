@@ -173,7 +173,7 @@ button:hover {
       <a href="forget_password/password.php" class="back-link">Forgot Password?</a>
     </form>
 
-    <a href="Ems_start/frontpage.php" class="back-link">← Back to Home</a>
+    <a href="/index.php" class="back-link">← Back to Home</a>
   </div>
 
   <script>

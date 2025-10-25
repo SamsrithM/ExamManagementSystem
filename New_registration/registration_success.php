@@ -110,7 +110,7 @@ a:hover {
   <div class="success-icon" aria-label="Success checkmark" role="img">✔️</div>
   <h1>Registration Successful!</h1>
   <p>Thank you for registering. Your details have been saved successfully.</p>
-  <a href="Ems_start/frontpage.php">Go To Home</a>
+  <a href="/index.php">Go To Home</a>
 </div>
 
 </body>

@@ -132,7 +132,7 @@ body {
     <div>Student: <?= htmlspecialchars($roll_number) ?></div>
     <div>
         <a href="student_front_page.php">Dashboard</a>
-        <a href="Ems_start/frontpage.php">Logout</a>
+        <a href="/index.php">Logout</a>
     </div>
 </div>
 

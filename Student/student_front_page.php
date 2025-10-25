@@ -147,7 +147,7 @@ a { text-decoration:none; color: inherit; }
     <a href="view_results.php">📊 Results</a>
     <div class="spacer"></div>
     <a href="student_view_profile.php">👤 View Profile</a>
-    <a href="../Ems_start/frontpage.php">🚪 Logout</a>
+    <a href="/index.php">🚪 Logout</a>
 </div>
 
 <!-- Dashboard -->

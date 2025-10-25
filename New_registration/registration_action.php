@@ -162,6 +162,7 @@ body {
     min-height: 100vh;
     padding: 20px;
     flex-direction: column;
+    box-sizing: border-box;
 }
 .message-box {
     max-width: 500px;
@@ -172,6 +173,7 @@ body {
     font-weight: bold;
     font-size: 1.1rem;
     margin-bottom: 20px;
+    word-wrap: break-word;
 }
 .success {
     background-color: #d4edda;
@@ -191,6 +193,7 @@ body {
     border-radius: 8px;
     font-weight: bold;
     transition: 0.3s;
+    display: inline-block;
 }
 .back-btn:hover {
     background-color: #155ab6;
@@ -198,6 +201,20 @@ body {
 a {
     color: inherit;
     text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .message-box {
+        font-size: 1rem;
+        padding: 15px;
+    }
+    .back-btn {
+        width: 100%;
+        text-align: center;
+        padding: 12px;
+        font-size: 1rem;
+    }
 }
 </style>
 </head>

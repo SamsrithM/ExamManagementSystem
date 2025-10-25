@@ -5,16 +5,17 @@ if (!isset($_SESSION['roll_number'])) {
     header("Location: student_login.php");
     exit;
 }
-    
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db = "new_registration_data";
+
+$roll_number = $_SESSION['roll_number'];
+
+// --- DB connection using environment variables ---
+$host = getenv('DB_HOST') ?: 'localhost';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: '';
+$db   = getenv('DB_NAME') ?: 'new_registration_data';
 
 $conn = new mysqli($host, $user, $pass, $db);
 if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
-
-$roll_number = $_SESSION['roll_number'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
     if ($_FILES['photo']['error'] === 0) {

@@ -1,18 +1,19 @@
 <?php
 session_start(); // start session at the very top
 
-// --- DB connection settings ---
-$db_host = "localhost";
-$db_user = "root";
-$db_pass = "";             
-$db_name = "student_data";
+// --- DB connection settings via environment variables ---
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('STUDENT_DB') ?: 'student_data';
 
 // Create connection
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    die("<h3 style='text-align:center; color:#c0392b;'>Connection failed: " . $conn->connect_error . "</h3>");
 }
 
+// Get POST input safely
 $input_user = isset($_POST['username']) ? trim($_POST['username']) : '';
 $input_pass = isset($_POST['password']) ? $_POST['password'] : '';
 
@@ -21,6 +22,7 @@ if ($input_user === '' || $input_pass === '') {
     exit;
 }
 
+// Prepare and execute query
 $stmt = $conn->prepare("SELECT student_password FROM students WHERE student_username = ?");
 $stmt->bind_param("s", $input_user);
 $stmt->execute();
@@ -38,10 +40,12 @@ if ($stmt->num_rows === 1) {
         header("Location: student_login_success.php");
         exit;
     } else {
+        // Wrong password
         header("Location: password_wrong.php");
         exit;
     }
 } else {
+    // Student ID not found
     header("Location: studentid_wrong.php");
     exit;
 }

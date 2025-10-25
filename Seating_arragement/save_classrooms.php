@@ -1,14 +1,12 @@
 <?php
 header('Content-Type: application/json');
-
-// Enable errors for debugging
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-// Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "room_allocation";
+// Database connection using environment variables
+$servername = getenv('DB_HOST') ?: 'localhost';
+$username   = getenv('DB_USER') ?: 'root';
+$password   = getenv('DB_PASS') ?: '';
+$dbname     = getenv('ROOM_DB') ?: 'room_allocation';
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 $conn->set_charset("utf8");
@@ -25,33 +23,35 @@ $classrooms = $data['classrooms'];
 $successCount = 0;
 $errors = [];
 
+$stmt = $conn->prepare("INSERT INTO generated_classrooms (classroom_name, exam_date, exam_time, created_at) VALUES (?, ?, ?, ?)");
+
 foreach ($classrooms as $classroom) {
-    // Make sure all required fields exist
+    // Validate fields
     if (!isset($classroom['name'], $classroom['date'], $classroom['time'])) {
         $errors[] = "Classroom data incomplete!";
         continue;
     }
 
-    $classroom_name = trim($conn->real_escape_string($classroom['name']));
-    $exam_date = trim($conn->real_escape_string($classroom['date']));
-    $exam_time = trim($conn->real_escape_string($classroom['time']));
-    $created_at = date('Y-m-d H:i:s');
+    $classroom_name = trim($classroom['name']);
+    $exam_date      = trim($classroom['date']);
+    $exam_time      = trim($classroom['time']);
+    $created_at     = date('Y-m-d H:i:s');
 
     if ($classroom_name === '' || $exam_date === '' || $exam_time === '') {
         $errors[] = "Classroom name, date, or time cannot be empty!";
         continue;
     }
 
-    $sql = "INSERT INTO generated_classrooms (classroom_name, exam_date, exam_time, created_at) 
-            VALUES ('$classroom_name', '$exam_date', '$exam_time', '$created_at')";
+    $stmt->bind_param("ssss", $classroom_name, $exam_date, $exam_time, $created_at);
 
-    if ($conn->query($sql)) {
+    if ($stmt->execute()) {
         $successCount++;
     } else {
-        $errors[] = "Failed to insert '{$classroom_name}': " . $conn->error;
+        $errors[] = "Failed to insert '{$classroom_name}': " . $stmt->error;
     }
 }
 
+$stmt->close();
 $conn->close();
 
 if ($successCount > 0) {

@@ -7,18 +7,19 @@ if (!isset($_SESSION['roll_number'])) {
 }
 
 $roll_number = $_SESSION['roll_number'];
-$course_code = isset($_GET['course_code']) ? $_GET['course_code'] : '';
+$course_code = $_GET['course_code'] ?? '';
 
 if (empty($course_code)) {
     die("Invalid course selected.");
 }
 
-// DB connection
-$db_host = "localhost";
-$db_user = "root";
-$db_pass = "";
+// Database connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('TEST_DB') ?: 'test_creation';
 
-$test_db = new mysqli($db_host, $db_user, $db_pass, "test_creation");
+$test_db = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($test_db->connect_error) {
     die("Test DB connection failed: " . $test_db->connect_error);
 }
@@ -44,6 +45,7 @@ $test_db->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">

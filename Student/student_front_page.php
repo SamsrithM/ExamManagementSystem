@@ -7,21 +7,24 @@ if (!isset($_SESSION['roll_number'])) {
     exit;
 }
 
-// DB connections
-$db_host = "localhost";
-$db_user = "root";
-$db_pass = "";
-    
+// Environment-based DB credentials
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+
 // Student DB
-$student_db = new mysqli($db_host, $db_user, $db_pass, "new_registration_data");
+$student_db_name = getenv('STUDENT_DB') ?: 'new_registration_data';
+$student_db = new mysqli($db_host, $db_user, $db_pass, $student_db_name);
 if ($student_db->connect_error) die("Student DB connection failed: " . $student_db->connect_error);
 
 // Course DB
-$course_db = new mysqli($db_host, $db_user, $db_pass, "course_registration_data");
+$course_db_name = getenv('COURSE_DB') ?: 'course_registration_data';
+$course_db = new mysqli($db_host, $db_user, $db_pass, $course_db_name);
 if ($course_db->connect_error) die("Course DB connection failed: " . $course_db->connect_error);
 
 // Test DB
-$test_db = new mysqli($db_host, $db_user, $db_pass, "test_creation");
+$test_db_name = getenv('TEST_DB') ?: 'test_creation';
+$test_db = new mysqli($db_host, $db_user, $db_pass, $test_db_name);
 if ($test_db->connect_error) die("Test DB connection failed: " . $test_db->connect_error);
 
 // Get student info
@@ -80,6 +83,7 @@ $test_db->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">

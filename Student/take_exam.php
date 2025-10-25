@@ -12,11 +12,11 @@ if ($test_id <= 0) {
     die("Invalid exam selected.");
 }
 
-// DB connection
-$db_host = "localhost";
-$db_user = "root";
-$db_pass = "";
-$db_name = "test_creation";
+// --- DB connection using environment variables ---
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'test_creation';
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
@@ -62,6 +62,7 @@ if (empty($questions)) {
 ?>
 
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">

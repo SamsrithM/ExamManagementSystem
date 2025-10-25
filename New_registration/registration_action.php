@@ -1,153 +1,70 @@
 <?php
 session_start();
+header('Content-Type: text/html; charset=UTF-8');
 
-// Database connections
-$host = "localhost";
-$user = "root";
-$pass = "";
+// Fetch DB credentials from environment variables
+$host = getenv('DB_HOST') ?: 'localhost';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('STUDENT_DB') ?: 'student_management';
 
-// Main database for detailed registration
-$conn = new mysqli($host, $user, $pass, "new_registration_data");
+// Connect to database
+$conn = new mysqli($host, $user, $pass, $db_name);
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    die("<h2 style='color:red;'>Database connection failed: " . htmlspecialchars($conn->connect_error) . "</h2>");
 }
 
-// Separate databases for login credentials
-$student_db = new mysqli($host, $user, $pass, "student_data");
-$faculty_db = new mysqli($host, $user, $pass, "faculty_data");
-
-// Initialize message variables
-$message = '';
-$message_type = ''; // 'success' or 'error'
-
-// Check form submission
+// Ensure form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $role = $_POST['role'] ?? '';
+    $name       = trim($_POST['name'] ?? '');
+    $email      = trim($_POST['email'] ?? '');
+    $roll_no    = trim($_POST['roll_no'] ?? '');
+    $password   = $_POST['password'] ?? '';
+    $confirm_pw = $_POST['confirm_password'] ?? '';
 
-    if ($role === 'student') {
-        // Collect student fields
-        $first_name = trim($_POST['first-name-student'] ?? '');
-        $last_name = trim($_POST['last-name-student'] ?? '');
-        $gender = $_POST['gender-student'] ?? '';
-        $dob = $_POST['dob-student'] ?? '';
-        $batch = intval($_POST['batch'] ?? 0);
-        $department = $_POST['student-department'] ?? '';
-        $roll_number = trim($_POST['roll-number'] ?? '');
-        $email = trim($_POST['institute-email-student'] ?? '');
-        $course = $_POST['course'] ?? '';
-        $semester = intval($_POST['semester'] ?? 0);
-        $password = $_POST['password-student'] ?? '';
-        $confirm_password = $_POST['confirm-password-student'] ?? '';
+    // Basic validation
+    $errors = [];
+    if (!$name || !$email || !$roll_no || !$password || !$confirm_pw) {
+        $errors[] = "All fields are required.";
+    }
+    if ($password !== $confirm_pw) {
+        $errors[] = "Passwords do not match.";
+    }
 
-        // Password match check
-        if ($password !== $confirm_password) {
-            $message = "Passwords do not match. Please try again.";
-            $message_type = 'error';
+    // Check if email or roll number already exists
+    if (empty($errors)) {
+        $stmt = $conn->prepare("SELECT id FROM students WHERE email = ? OR roll_no = ?");
+        $stmt->bind_param("ss", $email, $roll_no);
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows > 0) {
+            $errors[] = "Email or Roll Number already registered.";
         }
-        elseif ($first_name && $last_name && $gender && $roll_number && $email && $password) {
-            $checkStmt = $conn->prepare("SELECT roll_number, institute_email FROM students_new_data WHERE roll_number = ? OR institute_email = ?");
-            $checkStmt->bind_param("ss", $roll_number, $email);
-            $checkStmt->execute();
-            $checkStmt->store_result();
-            if ($checkStmt->num_rows > 0) {
-                $message = "Roll number or email already exists. Please use a different one.";
-                $message_type = 'error';
-            } else {
-                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $stmt->close();
+    }
 
-                $stmt1 = $conn->prepare("INSERT INTO students_new_data 
-                    (first_name,last_name,gender,dob,batch,department,roll_number,institute_email,course,semester,password) 
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?)");
-                $stmt1->bind_param(
-                    "ssssissssis",
-                    $first_name, $last_name, $gender, $dob, $batch,
-                    $department, $roll_number, $email, $course, $semester, $hashed_password
-                );
-
-                $stmt2 = $student_db->prepare("INSERT INTO students (student_username, student_password) VALUES (?, ?)");
-                $stmt2->bind_param("ss", $roll_number, $hashed_password);
-
-                if ($stmt1->execute() && $stmt2->execute()) {
-                    $message = "Registration successful! You can now <a href='login.php'>login</a>.";
-                    $message_type = 'success';
-                } else {
-                    $message = "Error: " . $stmt1->error . " / " . $stmt2->error;
-                    $message_type = 'error';
-                }
-
-                $stmt1->close();
-                $stmt2->close();
-            }
-            $checkStmt->close();
+    // If no errors, insert student
+    if (empty($errors)) {
+        $hashed_pw = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare("INSERT INTO students (name, email, roll_no, password) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $name, $email, $roll_no, $hashed_pw);
+        if ($stmt->execute()) {
+            $_SESSION['success_message'] = "Registration successful! Please log in.";
+            $stmt->close();
+            $conn->close();
+            header("Location: student_login.php");
+            exit;
         } else {
-            $message = "Please fill all required fields.";
-            $message_type = 'error';
+            $errors[] = "Error registering student: " . htmlspecialchars($stmt->error);
+            $stmt->close();
         }
-
-    } elseif ($role === 'faculty') {
-        $first_name = trim($_POST['first-name-faculty'] ?? '');
-        $last_name = trim($_POST['last-name-faculty'] ?? '');
-        $gender = $_POST['gender-faculty'] ?? '';
-        $email = trim($_POST['email-faculty'] ?? '');
-        $department = $_POST['faculty-department'] ?? '';
-        $designation = $_POST['designation'] ?? '';
-        $password = $_POST['password-faculty'] ?? '';
-        $confirm_password = $_POST['confirm-password-faculty'] ?? '';
-
-        // Password match check
-        if ($password !== $confirm_password) {
-            $message = "Passwords do not match. Please try again.";
-            $message_type = 'error';
-        }
-        elseif ($first_name && $last_name && $gender && $email && $password) {
-            $checkStmt = $conn->prepare("SELECT email FROM faculty_new_data WHERE email = ?");
-            $checkStmt->bind_param("s", $email);
-            $checkStmt->execute();
-            $checkStmt->store_result();
-            if ($checkStmt->num_rows > 0) {
-                $message = "Email already exists. Please use a different one.";
-                $message_type = 'error';
-            } else {
-                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-                $stmt1 = $conn->prepare("INSERT INTO faculty_new_data 
-                    (first_name,last_name,gender,email,department,designation,password) 
-                    VALUES (?,?,?,?,?,?,?)");
-                $stmt1->bind_param("sssssss", $first_name, $last_name, $gender, $email, $department, $designation, $hashed_password);
-
-                $stmt2 = $faculty_db->prepare("INSERT INTO faculty (username, password) VALUES (?, ?)");
-                $stmt2->bind_param("ss", $email, $hashed_password);
-
-                if ($stmt1->execute() && $stmt2->execute()) {
-                    $message = "Registration successful! You can now <a href='faculty_login.php'>login</a>.";
-                    $message_type = 'success';
-                } else {
-                    $message = "Error: " . $stmt1->error . " / " . $stmt2->error;
-                    $message_type = 'error';
-                }
-
-                $stmt1->close();
-                $stmt2->close();
-            }
-            $checkStmt->close();
-        } else {
-            $message = "Please fill all required fields.";
-            $message_type = 'error';
-        }
-    } else {
-        $message = "Please select a role.";
-        $message_type = 'error';
     }
 }
-
-// Close connections
-$conn->close();
-$student_db->close();
-$faculty_db->close();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">

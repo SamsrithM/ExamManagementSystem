@@ -24,11 +24,11 @@ if ($test_id <= 0) {
     exit;
 }
 
-// --- DB Connection ---
-$db_host = "localhost";
-$db_user = "root";
-$db_pass = "";
-$db_name = "test_creation";
+// --- DB Connection using environment variables ---
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('TEST_DB') ?: 'test_creation';
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
@@ -64,7 +64,7 @@ $stmt->close();
 // --- Calculate obtained marks ---
 $marks_obtained = 0;
 foreach ($answers as $qid => $selectedLetter) {
-    $qid = intval($qid);  // convert string key to integer
+    $qid = intval($qid);
     if (!isset($questions[$qid])) continue;
     $q = $questions[$qid];
     if ($q['question_type'] == 'objective' && strtoupper(trim($selectedLetter)) == strtoupper(trim($q['correct_answer']))) {
@@ -82,11 +82,11 @@ $stmt->bind_param("siiiii", $roll_number, $test_id, $marks_obtained, $total_mark
 $stmt->execute();
 $stmt->close();
 $conn->close();
-
-// --- Display simple success HTML ---
 ?>
+
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Exam Submitted</title>
     <style>

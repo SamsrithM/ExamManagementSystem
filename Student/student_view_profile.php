@@ -6,10 +6,11 @@ if (!isset($_SESSION['roll_number'])) {
     exit;
 }
 
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db = "new_registration_data";
+// --- DB connection settings via environment variables ---
+$host = getenv('DB_HOST') ?: 'localhost';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: '';
+$db   = getenv('REGISTRATION_DB') ?: 'new_registration_data';
 
 $conn = new mysqli($host, $user, $pass, $db);
 if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
@@ -17,7 +18,7 @@ if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
 $roll_number = $_SESSION['roll_number'];
 
 // Fetch student data including photo
-$stmt = $conn->prepare("SELECT student_id,first_name, last_name, gender, dob, batch, department, institute_email, course, semester, photo FROM students_new_data WHERE roll_number = ?");
+$stmt = $conn->prepare("SELECT student_id, first_name, last_name, gender, dob, batch, department, institute_email, course, semester, photo FROM students_new_data WHERE roll_number = ?");
 $stmt->bind_param("s", $roll_number);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -39,6 +40,7 @@ $photoFile = !empty($student['photo']) && file_exists('uploads/'.$student['photo
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">

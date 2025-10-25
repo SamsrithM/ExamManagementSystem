@@ -1,13 +1,13 @@
 <?php
 // view_slots.php
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "room_allocation";
+// Database connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'room_allocation';
 
-// Create database connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 
 // Check connection
 if ($conn->connect_error) {
@@ -33,6 +33,7 @@ $result = $conn->query($sql);
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">

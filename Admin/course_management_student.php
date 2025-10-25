@@ -1,85 +1,35 @@
 <?php
-session_start(); // Start session for notifications
+session_start();
 
-// --- Set correct timezone ---
-date_default_timezone_set('Asia/Kolkata');
-
-// --- DB Connection ---
-$host = "localhost";
-$user = "root";
-$pass = "";
-$dbname = "course_registration_data";
-
-$conn = new mysqli($host, $user, $pass, $dbname);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Database Connection Failed: " . $conn->connect_error . "</h2>");
-}
-
-// --- Handle Course Assignment Form ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_courses_students'])) {
-    $program = $_POST['program'];
-    $branch = $_POST['branch'];
-    $batch_year = $_POST['batch_year'];
-    $selected = $_POST['selected_courses'] ?? [];
-
-    if (count($selected) === 0) {
-        $_SESSION['notif_message'] = "⚠ Please select at least one course!";
-        header("Location: course_management_student.php");
-        exit;
-    }
-
-    // Fill up to 4 courses
-    $courses = array_pad($selected, 4, null);
-
-    $created_at = date('Y-m-d H:i:s');
-
-    // Insert data WITHOUT faculty name
-    $sql = "INSERT INTO assign_courses_students 
-            (program, branch, batch_year, course1, course2, course3, course4, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) {
-        die("Prepare failed: " . $conn->error);
-    }
-    $stmt->bind_param(
-        "ssssssss",
-        $program,
-        $branch,
-        $batch_year,
-        $courses[0],
-        $courses[1],
-        $courses[2],
-        $courses[3],
-        $created_at
-    );
-
-    if (!$stmt->execute()) {
-        die("Error inserting data: " . $stmt->error);
-    }
-    $stmt->close();
-
-    $_SESSION['notif_message'] = "✅ Courses successfully assigned to $program $branch $batch_year!";
-    header("Location: course_management_student.php");
+// Ensure student is logged in
+if (!isset($_SESSION['student_user'])) {
+    header("Location: student_login.php");
     exit;
 }
 
-// --- Fetch all courses ---
-$courses = [];
-$sql = "SELECT course_id, course_code, assigned_faculty_name 
-        FROM admin_courses
-        ORDER BY course_id ASC";
-$stmt = $conn->prepare($sql);
-$stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $courses[] = $row;
+// Render-ready DB connection
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'course_management';
+
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+if ($conn->connect_error) {
+    die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
 }
+
+// Fetch courses assigned to the student
+$student_id = $_SESSION['student_user'];
+$stmt = $conn->prepare("SELECT course_code, course_name, credits, semester FROM student_courses WHERE student_id = ?");
+$stmt->bind_param("s", $student_id);
+$stmt->execute();
+$courses = $stmt->get_result();
 $stmt->close();
-$conn->close();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -1,83 +1,36 @@
 <?php
 session_start();
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
-// Check if admin is logged in
+// Redirect if admin not logged in
 if (!isset($_SESSION['admin_user'])) {
     header("Location: admin_login.php");
     exit;
 }
 
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db = "admin_data";
+// Database connection using Render environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'admin_data';
 
-$conn = new mysqli($host, $user, $pass, $db);
-if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
-
-$admin_username = $_SESSION['admin_user'];
-
-// Handle photo upload
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
-    if ($_FILES['photo']['error'] === 0) {
-        $file_name = $_FILES['photo']['name'];
-        $file_tmp = $_FILES['photo']['tmp_name'];
-        $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-        $allowed = ['jpg','jpeg','png','gif'];
-
-        if (in_array($file_ext, $allowed)) {
-            $upload_dir = 'uploads/';
-            if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
-
-            $new_file_name = $admin_username.'_'.time().'.'.$file_ext;
-            $target_file = $upload_dir.$new_file_name;
-
-            if (move_uploaded_file($file_tmp, $target_file)) {
-                $stmt = $conn->prepare("UPDATE admin SET photo=? WHERE admin_username=?");
-                $stmt->bind_param("ss", $new_file_name, $admin_username);
-                $stmt->execute();
-                $stmt->close();
-
-                // Refresh page to show new photo
-                header("Location: admin_profile_view.php");
-                exit;
-            } else {
-                die("Failed to move uploaded file. Check folder permissions.");
-            }
-        } else {
-            die("Invalid file type. Only JPG, JPEG, PNG, GIF allowed.");
-        }
-    } else {
-        die("Error uploading file. Code: ".$_FILES['photo']['error']);
-    }
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+if ($conn->connect_error) {
+    die("Database connection failed: " . $conn->connect_error);
 }
 
-// Fetch admin data
-$stmt = $conn->prepare("SELECT admin_username, email, photo FROM admin WHERE admin_username=?");
-$stmt->bind_param("s", $admin_username);
+// Fetch admin details
+$admin_email = $_SESSION['admin_user'];
+$stmt = $conn->prepare("SELECT * FROM admin WHERE admin_username = ?");
+$stmt->bind_param("s", $admin_email);
 $stmt->execute();
 $result = $stmt->get_result();
-
-if ($result->num_rows === 1) {
-    $admin = $result->fetch_assoc();
-} else {
-    die("Admin data not found.");
-}
-
-$conn->close();
-
-// Default photo logic
-$defaultPhoto = "https://imgs.search.brave.com/pkPyTQFTOVFQw7Hki6hg6cgY5FPZ3UzkpUMsnfiuznQ/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/dmVjdG9yc3RvY2su/Y29tL2kvNTAwcC80/MS85MC9hdmF0YXIt/ZGVmYXVsdC11c2Vy/LXByb2ZpbGUtaWNv/bi1zaW1wbGUtZmxh/dC12ZWN0b3ItNTcy/MzQxOTAuanBn";
-$photoFile = !empty($admin['photo']) && file_exists('uploads/'.$admin['photo']) 
-             ? 'uploads/'.$admin['photo'] 
-             : $defaultPhoto;
+$admin_data = $result->fetch_assoc();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">

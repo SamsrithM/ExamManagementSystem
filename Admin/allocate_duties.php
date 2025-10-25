@@ -1,13 +1,13 @@
 <?php
 session_start();
 
-// Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "room_allocation";
+// Render-ready environment DB connection
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'room_allocation';
 
-$conn = new mysqli($servername, $username, $password, $dbname);
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
     die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
 }
@@ -31,7 +31,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['allocate'])) {
         $result = $check->get_result();
 
         if ($result->num_rows > 0) {
-            // Existing record — cannot modify except number of duties via table
             $message = "<p style='color:red; font-weight:bold;'>❌ Record already exists for $name ($email). Number of duties can be modified below.</p>";
         } else {
             // Insert new record
@@ -74,6 +73,7 @@ $duties = $conn->query("SELECT * FROM faculty_duty_done ORDER BY name ASC");
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Faculty Duty Allocation</title>

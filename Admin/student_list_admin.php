@@ -1,14 +1,24 @@
 <?php
 session_start();
 
+// Ensure admin is logged in
 if (!isset($_SESSION['admin_user'])) {
     header("Location: admin_login.php");
     exit;
 }
 
-$conn = new mysqli("localhost", "root", "", "new_registration_data");
-if ($conn->connect_error) die("Database connection failed: " . $conn->connect_error);
+// Database connection using environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'new_registration_data';
 
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+if ($conn->connect_error) {
+    die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
+}
+
+// Programs, Departments and Batches
 $programs = [
     'BTech' => ['CSE', 'ECE', 'MECH', 'AIDS'],
     'MTech' => ['CSE', 'ECE', 'MECH', 'AIDS'],
@@ -16,20 +26,26 @@ $programs = [
 ];
 $batches = ['2022','2023','2024','2025'];
 
+// Get selected filters
 $selected_program = $_GET['program'] ?? '';
 $selected_department = $_GET['dept'] ?? '';
 $selected_batch = $_GET['batch'] ?? '';
 
+// Fetch students if all filters are selected
 $students = [];
 if ($selected_program && $selected_department && $selected_batch) {
-    $stmt = $conn->prepare("SELECT student_id, first_name, last_name, gender, dob, batch, department, roll_number, institute_email, course, semester
-                            FROM students_new_data 
-                            WHERE course = ? AND department = ? AND batch = ? 
-                            ORDER BY roll_number ASC");
+    $stmt = $conn->prepare("
+        SELECT student_id, first_name, last_name, gender, dob, batch, department, roll_number, institute_email, course, semester
+        FROM students_new_data 
+        WHERE course = ? AND department = ? AND batch = ? 
+        ORDER BY roll_number ASC
+    ");
     $stmt->bind_param("ssi", $selected_program, $selected_department, $selected_batch);
     $stmt->execute();
     $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) $students[] = $row;
+    while ($row = $result->fetch_assoc()) {
+        $students[] = $row;
+    }
     $stmt->close();
 }
 $conn->close();
@@ -37,6 +53,7 @@ $conn->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <title>Students by Batch</title>

@@ -1,17 +1,17 @@
 <?php
 session_start(); // ✅ Start session at the very top
 
-// Database connection
-$db_host = "localhost";
-$db_user = "root";
-$db_pass = ""; // Default for XAMPP
-$db_name = "admin_data";
+// Database connection using Render environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: ''; // Default fallback
+$db_name = getenv('DB_NAME') ?: 'admin_data';
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
- 
+
 // Only handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input_user = isset($_POST['username']) ? trim($_POST['username']) : '';

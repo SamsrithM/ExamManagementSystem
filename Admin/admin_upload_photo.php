@@ -10,12 +10,13 @@ if (!isset($_SESSION['admin_user'])) {
     exit;
 }
 
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db = "admin_data";
+// Render environment DB connection
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'admin_data';
 
-$conn = new mysqli($host, $user, $pass, $db);
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
 
 $admin_username = $_SESSION['admin_user'];
@@ -41,7 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
                 $stmt->execute();
                 $stmt->close();
 
-                // Refresh page to show new photo
                 header("Location: admin_profile_view.php");
                 exit;
             } else {
@@ -78,6 +78,7 @@ $photoFile = !empty($admin['photo']) && file_exists('uploads/'.$admin['photo'])
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">

@@ -1,83 +1,28 @@
 <?php
 session_start();
 
+// Ensure admin is logged in
 if (!isset($_SESSION['admin_user'])) {
     header("Location: admin_login.php");
     exit;
 }
 
-// Database connection
-$conn = new mysqli("localhost", "root", "", "course_registration_data");
+// Database connection (render-ready using env variables)
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'course_registration_data';
+
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
-    die("Database connection failed: " . $conn->connect_error);
-}
-
-// Handle add course
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_course'])) {
-    $course_name = $_POST['course_name'];
-    $course_code = $_POST['course_code'];
-    $description = !empty($_POST['description']) ? $_POST['description'] : NULL; // optional
-
-    $stmt = $conn->prepare("INSERT INTO admin_courses (course_name, course_code, description, created_at, updated_at)
-                            VALUES (?, ?, ?, NOW(), NOW())");
-    $stmt->bind_param("sss", $course_name, $course_code, $description);
-    $stmt->execute();
-    $stmt->close();
-}
-
-// Handle course delete
-if (isset($_GET['delete'])) {
-    $id = $_GET['delete'];
-    $stmt = $conn->prepare("DELETE FROM admin_courses WHERE course_id = ?");
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $stmt->close();
-}
-
-// Handle faculty assignment
-if (isset($_POST['assign_faculty'])) {
-    $course_id = $_POST['course_id'];
-    $faculty_id = $_POST['faculty_id'];
-
-    // Fetch faculty details from another database
-    $faculty_conn = new mysqli("localhost", "root", "", "new_registration_data");
-    $fquery = $faculty_conn->prepare("SELECT first_name, last_name, email FROM faculty_new_data WHERE faculty_id = ?");
-    $fquery->bind_param("s", $faculty_id);
-    $fquery->execute();
-    $result = $fquery->get_result();
-
-    if ($result->num_rows > 0) {
-        $faculty = $result->fetch_assoc();
-        $faculty_name = $faculty['first_name'] . ' ' . $faculty['last_name'];
-        $faculty_email = $faculty['email'];
-
-        // Check if already assigned
-        $check = $conn->prepare("SELECT assigned_faculty_id FROM admin_courses WHERE course_id = ?");
-        $check->bind_param("i", $course_id);
-        $check->execute();
-        $check_result = $check->get_result()->fetch_assoc();
-        $check->close();
-
-        if (empty($check_result['assigned_faculty_id'])) {
-            $update = $conn->prepare("UPDATE admin_courses 
-                                      SET assigned_faculty_id = ?, assigned_faculty_name = ?, assigned_faculty_email = ?, updated_at = NOW() 
-                                      WHERE course_id = ?");
-            $update->bind_param("sssi", $faculty_id, $faculty_name, $faculty_email, $course_id);
-            $update->execute();
-            $update->close();
-        } else {
-            echo "<script>alert('⚠️ Course already assigned! Delete it first to reassign.');</script>";
-        }
-    }
-    $fquery->close();
-    $faculty_conn->close();
+    die("<h2 style='color:red;'>Database connection failed: " . $conn->connect_error . "</h2>");
 }
 
 // Fetch all courses
 $courses = $conn->query("SELECT * FROM admin_courses ORDER BY created_at DESC");
 
-// Fetch all faculty for dropdown
-$faculty_conn = new mysqli("localhost", "root", "", "new_registration_data");
+// Fetch all faculty for dropdown (from another DB)
+$faculty_conn = new mysqli($db_host, $db_user, $db_pass, getenv('FACULTY_DB') ?: 'new_registration_data');
 $faculty_list = $faculty_conn->query("SELECT faculty_id, first_name, last_name, email FROM faculty_new_data ORDER BY first_name ASC");
 $faculty_data = [];
 while ($f = $faculty_list->fetch_assoc()) {
@@ -86,8 +31,10 @@ while ($f = $faculty_list->fetch_assoc()) {
 $faculty_conn->close();
 ?>
 
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <title>Course Management</title>

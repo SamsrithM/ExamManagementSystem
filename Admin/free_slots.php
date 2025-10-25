@@ -1,31 +1,40 @@
 <?php
-// ==========================
-// Database Connection
-// ==========================
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db_name = "room_allocation";
+session_start();
 
-$conn = new mysqli($host, $user, $pass, $db_name);
+// Ensure admin is logged in
+if (!isset($_SESSION['admin_user'])) {
+    header("Location: admin_login.php");
+    exit;
+}
+
+// Database connection
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'room_allocation';
+
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
-    die("<h3 style='color:red;'>Database connection failed: " . $conn->connect_error . "</h3>");
+    die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
 }
 
 $notification = "";
 
 // ==========================
-// Add Single Slot
+// Add Exam Slot
 // ==========================
 if (isset($_POST['submit_slot'])) {
+    $exam_type = $_POST['exam_type'] ?? '';
     $slot_date = $_POST['slot_date'];
     $slot_start = $_POST['slot_start'];
     $slot_end = $_POST['slot_end'];
     $max_capacity = intval($_POST['max_capacity']);
     $slot_time = "$slot_start - $slot_end";
 
-    $stmt = $conn->prepare("INSERT INTO free_slots (slot_date, slot_time, max_capacity) VALUES (?, ?, ?)");
-    $stmt->bind_param("ssi", $slot_date, $slot_time, $max_capacity);
+    $stmt = $conn->prepare(
+        "INSERT INTO free_slots (exam_type, slot_date, slot_time, max_capacity) VALUES (?, ?, ?, ?)"
+    );
+    $stmt->bind_param("sssi", $exam_type, $slot_date, $slot_time, $max_capacity);
     $stmt->execute();
     $stmt->close();
 
@@ -33,22 +42,32 @@ if (isset($_POST['submit_slot'])) {
 }
 
 // ==========================
-// Delete Slot
+// Delete Exam Slot
 // ==========================
 if (isset($_GET['delete'])) {
     $delete_id = intval($_GET['delete']);
-    
-    // 1. Delete all dependent selections first
-    $conn->query("DELETE FROM faculty_slot_selection WHERE slot_id=$delete_id");
-    
-    // 2. Now delete the slot
+    $conn->query("DELETE FROM faculty_slot_selection WHERE slot_id=$delete_id"); // remove dependencies
     $conn->query("DELETE FROM free_slots WHERE id=$delete_id");
-    
     $notification = "🗑️ Slot and related selections deleted successfully!";
 }
 
+// ==========================
+// Fetch all slots (for viewing)
+// ==========================
+$slots = [];
+$result = $conn->query("SELECT * FROM free_slots ORDER BY slot_date ASC");
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $slots[] = $row;
+    }
+}
+
+$conn->close();
 ?>
+
 <!DOCTYPE html>
+<html lang="en">
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">

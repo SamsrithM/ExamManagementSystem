@@ -1,40 +1,37 @@
 <?php
-// faculty_list.php
+session_start();
 
-// Database connection settings
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "new_registration_data"; // ✅ Correct database name
+// Ensure admin is logged in
+if (!isset($_SESSION['admin_user'])) {
+    header("Location: admin_login.php");
+    exit;
+}
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+// Database connection
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'new_registration_data';
 
-// Check connection
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
     die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
 }
-    
-$db_error = "";
+
+// Fetch faculty data
 $faculty = [];
-
-// ✅ Fetch faculty data
-$sql = "SELECT faculty_id, first_name, last_name, gender, email, department, designation FROM faculty_new_data";
-$result = $conn->query($sql);
-
+$result = $conn->query("SELECT faculty_id, first_name, last_name, gender, email, department, designation FROM faculty_new_data ORDER BY first_name ASC");
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $faculty[] = $row;
     }
-} elseif ($conn->error) {
-    $db_error = $conn->error;
 }
-
 $conn->close();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">

@@ -7,11 +7,11 @@ if (!isset($_SESSION['admin_user'])) {
     exit;
 }
 
-// Database connection for student data
-$db_host = "localhost";
-$db_user = "root";
-$db_pass = "";
-$db_name = "new_registration_data";
+// Database connection using Render environment variables
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_NAME') ?: 'new_registration_data';
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
@@ -74,10 +74,12 @@ if (isset($_GET['program']) && isset($_GET['dept']) && isset($_GET['batch']) && 
     }
     $stmt->close();
 }
+
 if (!empty($conn)) {
     $conn->close();
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

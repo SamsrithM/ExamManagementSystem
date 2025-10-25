@@ -44,21 +44,82 @@ $result = $stmt->get_result();
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>View My Tests</title>
 <style>
-body { font-family: Arial, sans-serif; padding: 20px; background: #f4f7f9; }
-h2 { text-align: center; color: #1abc9c; margin-bottom: 20px; }
-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-th { background-color: #1abc9c; color: white; }
-a.button { padding: 6px 12px; background: #1abc9c; color: white; text-decoration: none; border-radius: 5px; margin-right:5px; }
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background: #f4f7f9;
+    margin:0;
+}
+h2 {
+    text-align: center;
+    color: #1abc9c;
+    margin-bottom: 20px;
+}
+.table-wrapper {
+    overflow-x:auto;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    min-width: 700px;
+}
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+th {
+    background-color: #1abc9c;
+    color: white;
+}
+a.button {
+    padding: 6px 12px;
+    background: #1abc9c;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-right:5px;
+    display:inline-block;
+    margin-bottom:5px;
+}
 a.button:hover { background: #159a85; }
-a.delete { background: #e74c3c; }
+a.delete {
+    background: #e74c3c;
+}
 a.delete:hover { background: #c0392b; }
+.return-btn {
+    display:inline-block;
+    margin-top:20px;
+    padding:10px 20px;
+    background:#1abc9c;
+    color:white;
+    text-decoration:none;
+    border-radius:5px;
+    transition:0.3s;
+}
+.return-btn:hover { background:#159a85; }
+
+/* Responsive adjustments */
+@media(max-width:768px){
+    th, td { padding:10px; font-size:14px; }
+    a.button { padding:5px 10px; font-size:13px; }
+}
+@media(max-width:480px){
+    h2 { font-size:22px; }
+    th, td { padding:8px; font-size:12px; }
+    a.button { display:block; width:100%; margin-bottom:5px; text-align:center; }
+}
 </style>
 </head>
 <body>
 
 <h2>Created Tests</h2>
 
+<div class="table-wrapper">
 <table>
     <thead>
         <tr>
@@ -94,9 +155,12 @@ a.delete:hover { background: #c0392b; }
     <?php endif; ?>
     </tbody>
 </table>
-<div style="text-align:center; margin-top:20px;">
-    <a href="faculty_front_page.php" style="padding:10px 20px; background:#1abc9c; color:white; text-decoration:none; border-radius:5px; transition:0.3s;">⬅️ Return to Dashboard</a>
 </div>
+
+<div style="text-align:center;">
+    <a href="faculty_front_page.php" class="return-btn">⬅️ Return to Dashboard</a>
+</div>
+
 </body>
 </html>
 

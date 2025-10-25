@@ -87,17 +87,125 @@ $stmt->close();
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Publish Exam</title>
 <style>
-body { font-family: Arial, sans-serif; background:#f4f7f9; padding:20px; }
-h2 { color:#2c3e50; }
-table { border-collapse: collapse; width:100%; margin-top:15px; background:white; }
-th, td { border:1px solid #ddd; padding:8px; text-align:left; }
-th { background:#1abc9c; color:white; }
-tr:hover { background:#f1f1f1; }
-select, button { padding:6px 10px; margin:2px; }
-.msg { margin:10px 0; color:green; }
-.published { color:green; font-weight:bold; }
-.back-btn { display:inline-block; margin-top:20px; padding:8px 14px; background:#1abc9c; color:white; text-decoration:none; border-radius:5px; }
-.back-btn:hover { background:#16a085; }
+body { 
+  font-family: Arial, sans-serif; 
+  background: #f4f7f9; 
+  padding: 20px; 
+}
+
+h2 { 
+  color: #2c3e50; 
+  text-align: center; 
+  margin-bottom: 20px; 
+}
+
+table { 
+  border-collapse: collapse; 
+  width: 100%; 
+  margin-top: 15px; 
+  background: white; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+}
+
+th, td { 
+  border: 1px solid #ddd; 
+  padding: 8px; 
+  text-align: left; 
+}
+
+th { 
+  background: #1abc9c; 
+  color: white; 
+  font-weight: 600; 
+}
+
+tr:hover { 
+  background: #f1f1f1; 
+}
+
+select, button { 
+  padding: 6px 10px; 
+  margin: 2px; 
+  border-radius: 5px; 
+  border: 1px solid #ccc; 
+}
+
+button { 
+  background: #1abc9c; 
+  color: white; 
+  cursor: pointer; 
+  transition: background 0.3s ease, transform 0.2s ease; 
+}
+
+button:hover { 
+  background: #16a085; 
+  transform: scale(1.05); 
+}
+
+.msg { 
+  margin: 10px 0; 
+  color: green; 
+  font-weight: bold; 
+  text-align: center; 
+}
+
+.published { 
+  color: green; 
+  font-weight: bold; 
+  margin-left: 5px; 
+}
+
+.back-btn { 
+  display: inline-block; 
+  margin-top: 20px; 
+  padding: 10px 18px; 
+  background: #1abc9c; 
+  color: white; 
+  text-decoration: none; 
+  border-radius: 6px; 
+  transition: background 0.3s ease; 
+}
+
+.back-btn:hover { 
+  background: #16a085; 
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  table, thead, tbody, th, td, tr { 
+    display: block; 
+    width: 100%; 
+  }
+
+  th { 
+    display: none; 
+  }
+
+  td { 
+    padding: 10px; 
+    border: none; 
+    position: relative; 
+    padding-left: 50%; 
+    margin-bottom: 10px; 
+    background: #f9f9f9; 
+    border-radius: 6px; 
+  }
+
+  td:before { 
+    position: absolute; 
+    left: 15px; 
+    top: 10px; 
+    width: 45%; 
+    white-space: nowrap; 
+    font-weight: bold; 
+    content: attr(data-label); 
+  }
+
+  select, button { 
+    width: 100%; 
+    margin-top: 5px; 
+  }
+}
 </style>
 </head>
 <body>

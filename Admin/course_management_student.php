@@ -7,24 +7,70 @@ if (!isset($_SESSION['student_user'])) {
     exit;
 }
 
-// Render-ready DB connection
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_MANAGE') ?: 'course_management';
+$message = "";
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
+
+// DB connection
+if ($env === 'local') {
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'course_management';
+
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_MANAGE') ?: 'course_management';
+
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h2 style='color:red;'>PostgreSQL Connection failed.</h2>");
 }
 
-// Fetch courses assigned to the student
+// Fetch courses assigned to student
 $student_id = $_SESSION['student_user'];
-$stmt = $conn->prepare("SELECT course_code, course_name, credits, semester FROM student_courses WHERE student_id = ?");
-$stmt->bind_param("s", $student_id);
-$stmt->execute();
-$courses = $stmt->get_result();
-$stmt->close();
+$courses = [];
+
+if ($env === 'local') {
+    $stmt = $conn->prepare("SELECT course_id, course_code, course_name, assigned_faculty_name, credits, semester FROM student_courses WHERE student_id = ?");
+    $stmt->bind_param("s", $student_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) $courses[] = $row;
+    $stmt->close();
+} else {
+    $result = pg_query_params($conn, "SELECT course_id, course_code, course_name, assigned_faculty_name, credits, semester FROM student_courses WHERE student_id = $1", [$student_id]);
+    while ($row = pg_fetch_assoc($result)) $courses[] = $row;
+}
+
+// Handle course assignment submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_courses_students'])) {
+    $program = $_POST['program'] ?? '';
+    $branch = $_POST['branch'] ?? '';
+    $batch_year = $_POST['batch_year'] ?? '';
+    $selected_courses = $_POST['selected_courses'] ?? [];
+
+    foreach ($selected_courses as $code) {
+        if ($env === 'local') {
+            $stmt = $conn->prepare("INSERT INTO batch_courses (student_id, course_code, program, branch, batch_year) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssss", $student_id, $code, $program, $branch, $batch_year);
+            $stmt->execute();
+            $stmt->close();
+        } else {
+            pg_query_params($conn, "INSERT INTO batch_courses (student_id, course_code, program, branch, batch_year) VALUES ($1,$2,$3,$4,$5)", [$student_id,$code,$program,$branch,$batch_year]);
+        }
+    }
+
+    $_SESSION['notif_message'] = "✅ Selected courses assigned successfully!";
+    header("Location: ".$_SERVER['PHP_SELF']);
+    exit;
+}
+
 ?>
 
 <!DOCTYPE html>

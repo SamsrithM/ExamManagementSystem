@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
 
     // Database connection using environment variables
-    $db_host = getenv('DB_HOST') ?: '127.0.0.1';
+    $db_host = getenv('DB_HOST') ?: 'mysql';
     $db_user = getenv('DB_USER') ?: 'root';
     $db_pass = getenv('DB_PASS') ?: '';
     $db_name = getenv('DB_TEST') ?: 'test_creation';

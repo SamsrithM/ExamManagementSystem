@@ -1,5 +1,5 @@
 <?php
-session_start(); // ✅ Needed to access logged-in faculty info
+session_start();
 
 // Redirect if faculty not logged in
 if (!isset($_SESSION['faculty_user'])) {
@@ -7,15 +7,21 @@ if (!isset($_SESSION['faculty_user'])) {
     exit;
 }
 
-// Database connection using environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_TEST') ?: 'test_creation';
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Database connection failed: " . $conn->connect_error . "</h2>");
+// Database connection
+if ($env === 'local') {
+    $conn = new mysqli('localhost', 'root', '', 'test_creation');
+    if ($conn->connect_error) die("<h2 style='color:red;'>DB Connection failed: {$conn->connect_error}</h2>");
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_TEST') ?: 'test_creation';
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h2 style='color:red;'>PostgreSQL connection failed</h2>");
 }
 
 $showModal = false;
@@ -34,43 +40,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($qtype === 'objective') {
             $options_json = json_encode(array_map('trim', explode("\n", $options_data[$id])));
             $correct = $correct_answers[$id] ?? '';
-            $stmt = $conn->prepare("UPDATE questions SET question_text=?, options=?, correct_answer=? WHERE id=?");
-            $stmt->bind_param("sssi", $qtext, $options_json, $correct, $id);
-        } else {
+
+            if ($env === 'local') {
+                $stmt = $conn->prepare("UPDATE questions SET question_text=?, options=?, correct_answer=? WHERE id=?");
+                $stmt->bind_param("sssi", $qtext, $options_json, $correct, $id);
+                $stmt->execute();
+                $stmt->close();
+            } else {
+                $res = pg_query_params($conn,
+                    "UPDATE questions SET question_text=$1, options=$2, correct_answer=$3 WHERE id=$4",
+                    [$qtext, $options_json, $correct, $id]
+                );
+            }
+
+        } else { // descriptive
             $desc_answer = $descriptive_answers[$id] ?? '';
-            $stmt = $conn->prepare("UPDATE questions SET question_text=?, descriptive_answer=? WHERE id=?");
-            $stmt->bind_param("ssi", $qtext, $desc_answer, $id);
+            if ($env === 'local') {
+                $stmt = $conn->prepare("UPDATE questions SET question_text=?, descriptive_answer=? WHERE id=?");
+                $stmt->bind_param("ssi", $qtext, $desc_answer, $id);
+                $stmt->execute();
+                $stmt->close();
+            } else {
+                $res = pg_query_params($conn,
+                    "UPDATE questions SET question_text=$1, descriptive_answer=$2 WHERE id=$3",
+                    [$qtext, $desc_answer, $id]
+                );
+            }
         }
-        $stmt->execute();
-        $stmt->close();
     }
 
-    $showModal = true; // show success modal after submit
+    $showModal = true;
 }
 
 // Fetch latest test_id
-$result = $conn->query("SELECT DISTINCT test_id FROM questions ORDER BY test_id DESC LIMIT 1");
-if (!$result || $result->num_rows == 0) {
-    die("<h2>No questions found in database.</h2>");
+if ($env === 'local') {
+    $result = $conn->query("SELECT DISTINCT test_id FROM questions ORDER BY test_id DESC LIMIT 1");
+    if (!$result || $result->num_rows === 0) die("<h2>No questions found in database.</h2>");
+    $test_id = $result->fetch_assoc()['test_id'];
+} else {
+    $res = pg_query($conn, "SELECT DISTINCT test_id FROM questions ORDER BY test_id DESC LIMIT 1");
+    if (!$res || pg_num_rows($res) === 0) die("<h2>No questions found in database.</h2>");
+    $test_id = pg_fetch_assoc($res)['test_id'];
 }
-$row = $result->fetch_assoc();
-$test_id = $row['test_id'];
 
 // Fetch questions for editing
-$stmt = $conn->prepare("SELECT * FROM questions WHERE test_id = ?");
-$stmt->bind_param("i", $test_id);
-$stmt->execute();
-$res = $stmt->get_result();
-
 $questions = [];
-while ($row = $res->fetch_assoc()) {
-    $questions[] = $row;
+if ($env === 'local') {
+    $stmt = $conn->prepare("SELECT * FROM questions WHERE test_id = ?");
+    $stmt->bind_param("i", $test_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $questions[] = $row;
+    $stmt->close();
+} else {
+    $res = pg_query_params($conn, "SELECT * FROM questions WHERE test_id = $1", [$test_id]);
+    while ($row = pg_fetch_assoc($res)) $questions[] = $row;
 }
 
-$stmt->close();
-$conn->close();
+if ($env === 'local') $conn->close();
+else pg_close($conn);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>

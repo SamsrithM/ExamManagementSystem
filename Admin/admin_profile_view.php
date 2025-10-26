@@ -7,26 +7,67 @@ if (!isset($_SESSION['admin_user'])) {
     exit;
 }
 
-// Database connection using Render environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_ADMIN') ?: 'admin_data';
+$admin_data = [];
+$photoFile = "default_profile.png"; // Default image
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("Database connection failed: " . $conn->connect_error);
+// Detect environment: Render sets an environment variable
+$env = getenv('RENDER') ? 'render' : 'local';
+
+$admin_email = $_SESSION['admin_user'];
+
+if ($env === 'local') {
+    // --- MySQL connection for XAMPP ---
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'admin_data';
+
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) {
+        die("Database connection failed: " . $conn->connect_error);
+    }
+
+    // Fetch admin details
+    $stmt = $conn->prepare("SELECT * FROM admin WHERE admin_username = ?");
+    $stmt->bind_param("s", $admin_email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $admin_data = $result->fetch_assoc();
+    $stmt->close();
+
+} else {
+    // --- PostgreSQL connection for Render ---
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_ADMIN');
+
+    $conn_string = "host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass";
+    $conn = pg_connect($conn_string);
+
+    if (!$conn) {
+        die("Database connection failed.");
+    }
+
+    // Fetch admin details
+    $query = "SELECT * FROM admin WHERE admin_username = $1";
+    $result = pg_query_params($conn, $query, [$admin_email]);
+    $admin_data = pg_fetch_assoc($result);
 }
 
-// Fetch admin details
-$admin_email = $_SESSION['admin_user'];
-$stmt = $conn->prepare("SELECT * FROM admin WHERE admin_username = ?");
-$stmt->bind_param("s", $admin_email);
-$stmt->execute();
-$result = $stmt->get_result();
-$admin_data = $result->fetch_assoc();
-$stmt->close();
+// Set profile photo if exists
+if (!empty($admin_data['photo'])) {
+    $photoFile = $admin_data['photo'];
+}
+
+// Close connection
+if (!empty($conn)) {
+    if ($env === 'local') $conn->close();
+    else pg_close($conn);
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

@@ -2,9 +2,12 @@
 session_start();
 header('Content-Type: text/html; charset=UTF-8');
 
-// --- Environment variables ---
-$db_type = getenv('DB_TYPE') ?: 'mysql'; // "mysql" or "pgsql"
+// --- Environment detection ---
+$env = getenv('RENDER') ? 'render' : 'local';
+
+// --- Database credentials ---
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
+$db_port = getenv('DB_PORT') ?: ($env === 'local' ? '3306' : '5432');
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_STUDENT_DATA') ?: 'student_data';
@@ -14,15 +17,16 @@ $input_user = isset($_POST['username']) ? trim($_POST['username']) : '';
 $input_pass = isset($_POST['password']) ? $_POST['password'] : '';
 
 if ($input_user === '' || $input_pass === '') {
-    echo "<h3 style='text-align:center; color:#c0392b;'>Please enter both Student ID and Password.</h3>";
-    exit;
+    die("<h3 style='text-align:center; color:#c0392b;'>Please enter both Student ID and Password.</h3>");
 }
 
-// --- MySQL Connection ---
-if ($db_type === 'mysql') {
+// --- Connect to DB ---
+if ($env === 'local') {
+    // MySQL connection
     $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
     if ($conn->connect_error) die("<h3 style='text-align:center; color:#c0392b;'>MySQL connection failed: " . htmlspecialchars($conn->connect_error) . "</h3>");
-    
+    $conn->set_charset("utf8");
+
     $stmt = $conn->prepare("SELECT student_password FROM students WHERE student_username = ?");
     $stmt->bind_param("s", $input_user);
     $stmt->execute();
@@ -45,11 +49,9 @@ if ($db_type === 'mysql') {
     }
     $stmt->close();
     $conn->close();
-}
-
-// --- PostgreSQL Connection ---
-elseif ($db_type === 'pgsql') {
-    $conn_string = "host=$db_host dbname=$db_name user=$db_user password=$db_pass";
+} else {
+    // PostgreSQL connection
+    $conn_string = "host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass";
     $conn = pg_connect($conn_string);
     if (!$conn) die("<h3 style='text-align:center; color:#c0392b;'>PostgreSQL connection failed.</h3>");
 
@@ -75,8 +77,5 @@ elseif ($db_type === 'pgsql') {
     pg_free_result($result);
     pg_close($conn);
 }
-
-else {
-    die("<h3 style='text-align:center; color:#c0392b;'>Unsupported DB type: " . htmlspecialchars($db_type) . "</h3>");
-}
 ?>
+

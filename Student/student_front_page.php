@@ -7,78 +7,90 @@ if (!isset($_SESSION['roll_number'])) {
     exit;
 }
 
-// Environment-based DB credentials
+$roll_number = $_SESSION['roll_number'];
+
+// Environment detection
+$env = getenv('RENDER') ? 'render' : 'local';
+
+// Database credentials
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
+$db_port = getenv('DB_PORT') ?: ($env==='local'?'3306':'5432');
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
-
-// Student DB
 $student_db_name = getenv('DB_NAME') ?: 'new_registration_data';
-$student_db = new mysqli($db_host, $db_user, $db_pass, $student_db_name);
-if ($student_db->connect_error) die("Student DB connection failed: " . $student_db->connect_error);
+$course_db_name  = getenv('COURSE_DB') ?: 'course_registration_data';
+$test_db_name    = getenv('TEST_DB') ?: 'test_creation';
 
-// Course DB
-$course_db_name = getenv('COURSE_DB') ?: 'course_registration_data';
-$course_db = new mysqli($db_host, $db_user, $db_pass, $course_db_name);
-if ($course_db->connect_error) die("Course DB connection failed: " . $course_db->connect_error);
-
-// Test DB
-$test_db_name = getenv('TEST_DB') ?: 'test_creation';
-$test_db = new mysqli($db_host, $db_user, $db_pass, $test_db_name);
-if ($test_db->connect_error) die("Test DB connection failed: " . $test_db->connect_error);
+// Connect to DBs
+if ($env === 'local') {
+    $student_db = new mysqli($db_host,$db_user,$db_pass,$student_db_name);
+    $course_db  = new mysqli($db_host,$db_user,$db_pass,$course_db_name);
+    $test_db    = new mysqli($db_host,$db_user,$db_pass,$test_db_name);
+    if ($student_db->connect_error) die("Student DB error: ".$student_db->connect_error);
+    if ($course_db->connect_error) die("Course DB error: ".$course_db->connect_error);
+    if ($test_db->connect_error) die("Test DB error: ".$test_db->connect_error);
+    $student_db->set_charset("utf8");
+    $course_db->set_charset("utf8");
+    $test_db->set_charset("utf8");
+} else {
+    $student_db = pg_connect("host=$db_host port=$db_port dbname=$student_db_name user=$db_user password=$db_pass");
+    $course_db  = pg_connect("host=$db_host port=$db_port dbname=$course_db_name user=$db_user password=$db_pass");
+    $test_db    = pg_connect("host=$db_host port=$db_port dbname=$test_db_name user=$db_user password=$db_pass");
+    if (!$student_db || !$course_db || !$test_db) die("PostgreSQL connection failed!");
+}
 
 // Get student info
-$roll_number = $_SESSION['roll_number'];
-$stmt = $student_db->prepare("SELECT course, department, batch FROM students_new_data WHERE roll_number=?");
-$stmt->bind_param("s", $roll_number);
-$stmt->execute();
-$result = $stmt->get_result();
 $student_program = $student_branch = $student_batch = '';
-if ($row = $result->fetch_assoc()) {
-    $student_program = $row['course'];
-    $student_branch = $row['department'];
-    $student_batch = $row['batch'];
+if ($env==='local') {
+    $stmt = $student_db->prepare("SELECT course, department, batch FROM students_new_data WHERE roll_number=?");
+    $stmt->bind_param("s",$roll_number);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($row=$res->fetch_assoc()) {
+        $student_program=$row['course']; $student_branch=$row['department']; $student_batch=$row['batch'];
+    }
+    $stmt->close();
+} else {
+    $res = pg_query_params($student_db,"SELECT course, department, batch FROM students_new_data WHERE roll_number=$1",[$roll_number]);
+    if ($row=pg_fetch_assoc($res)) {
+        $student_program=$row['course']; $student_branch=$row['department']; $student_batch=$row['batch'];
+    }
 }
-$stmt->close();
-$student_db->close();
 
 // Assigned courses
 $assigned_courses = [];
-if (!empty($student_program) && !empty($student_branch) && !empty($student_batch)) {
-    $stmt = $course_db->prepare("
-        SELECT course1, course2, course3, course4
-        FROM assign_courses_students
-        WHERE LOWER(program)=LOWER(?) AND LOWER(branch)=LOWER(?) AND batch_year=?
-    ");
-    $stmt->bind_param("sss", $student_program, $student_branch, $student_batch);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($row = $result->fetch_assoc()) {
-        for ($i = 1; $i <= 4; $i++) {
-            if (!empty($row["course$i"])) $assigned_courses[] = $row["course$i"];
+if ($student_program && $student_branch && $student_batch) {
+    if ($env==='local') {
+        $stmt = $course_db->prepare("SELECT course1, course2, course3, course4 FROM assign_courses_students WHERE LOWER(program)=LOWER(?) AND LOWER(branch)=LOWER(?) AND batch_year=?");
+        $stmt->bind_param("sss",$student_program,$student_branch,$student_batch);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($row=$res->fetch_assoc()) {
+            for($i=1;$i<=4;$i++) if(!empty($row["course$i"])) $assigned_courses[]=$row["course$i"];
         }
+        $stmt->close();
+    } else {
+        $res = pg_query_params($course_db,"SELECT course1,course2,course3,course4 FROM assign_courses_students WHERE LOWER(program)=LOWER($1) AND LOWER(branch)=LOWER($2) AND batch_year=$3",[$student_program,$student_branch,$student_batch]);
+        if($row=pg_fetch_assoc($res)) for($i=1;$i<=4;$i++) if(!empty($row["course$i"])) $assigned_courses[]=$row["course$i"];
     }
-    $stmt->close();
 }
-$course_db->close();
 
 // Upcoming tests
-$upcoming_tests = [];
+$upcoming_tests=[];
 $today_date = date('Y-m-d');
-if (!empty($student_branch)) {
-    $stmt = $test_db->prepare("
-        SELECT test_id, branch, test_title, test_date, available_from, duration, test_type
-        FROM tests
-        WHERE branch=? AND test_date >= ?
-        ORDER BY test_date ASC
-    ");
-    $stmt->bind_param("ss", $student_branch, $today_date);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) $upcoming_tests[] = $row;
-    $stmt->close();
+if ($student_branch) {
+    if ($env==='local') {
+        $stmt = $test_db->prepare("SELECT test_id, branch, test_title, test_date, available_from, duration, test_type FROM tests WHERE branch=? AND test_date>=? ORDER BY test_date ASC");
+        $stmt->bind_param("ss",$student_branch,$today_date);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while($row=$res->fetch_assoc()) $upcoming_tests[]=$row;
+        $stmt->close();
+    } else {
+        $res = pg_query_params($test_db,"SELECT test_id, branch, test_title, test_date, available_from, duration, test_type FROM tests WHERE branch=$1 AND test_date>=$2 ORDER BY test_date ASC",[$student_branch,$today_date]);
+        while($row=pg_fetch_assoc($res)) $upcoming_tests[]=$row;
+    }
 }
-$test_db->close();
 ?>
 
 <!DOCTYPE html>

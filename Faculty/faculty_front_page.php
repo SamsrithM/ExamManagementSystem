@@ -1,60 +1,58 @@
 <?php
+// db_connect.php
 session_start();
 
-// Database connection using environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_NAME') ?: 'new_registration_data';
-$courses_db_name = getenv('DB_COURSE') ?: 'course_registration_data';
-$test_db_name = getenv('DB_TEST') ?: 'test_creation';
-
-// Connect to main database for faculty info
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) { $db_error = "Database connection failed: " . $conn->connect_error; } else { $db_error = ''; }
-
-// Connect to courses database
-$courses_conn = new mysqli($db_host, $db_user, $db_pass, $courses_db_name);
-if ($courses_conn->connect_error) { $courses_db_error = "Courses database connection failed: " . $courses_conn->connect_error; } else { $courses_db_error = ''; }
-
-// Connect to test_creation database
-$test_conn = new mysqli($db_host, $db_user, $db_pass, $test_db_name);
-if ($test_conn->connect_error) { $test_db_error = "Test database connection failed: " . $test_conn->connect_error; } else { $test_db_error = ''; }
-
-// Get faculty info
-$faculty_email = $_SESSION['faculty_user'] ?? '';
-$faculty_courses = [];
-$faculty_tests = [];
-
-// Get courses assigned to this faculty
-if (!empty($faculty_email) && empty($courses_db_error)) {
-    $courses_result = $courses_conn->query(
-        "SELECT course_id, course_name, course_code, description, assigned_faculty_email, created_at 
-         FROM admin_courses 
-         WHERE assigned_faculty_email = '$faculty_email' 
-         ORDER BY course_name ASC"
-    );
-    while ($row = $courses_result->fetch_assoc()) {
-        $faculty_courses[] = $row;
-    }
+// Ensure faculty is logged in
+if (!isset($_SESSION['faculty_user'])) {
+    header("Location: faculty_login.php");
+    exit;
 }
 
-// Get upcoming tests created by this faculty
-if (!empty($faculty_email) && empty($test_db_error)) {
-    $today_date = date('Y-m-d');
-    $sql_tests = "SELECT test_id, branch, test_title, test_date, available_from, duration, test_type, created_by
-                  FROM tests
-                  WHERE created_by = '$faculty_email' 
-                    AND test_date >= '$today_date'
-                  ORDER BY test_date ASC";
-    $tests_result = $test_conn->query($sql_tests);
-    if ($tests_result) {
-        while ($row = $tests_result->fetch_assoc()) {
-            $faculty_tests[] = $row;
+$faculty_email = $_SESSION['faculty_user'];
+
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
+
+if ($env === 'local') {
+    // Local MySQL connection (XAMPP)
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'new_registration_data'; // change per page
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("MySQL connection failed: " . $conn->connect_error);
+    $db_type = 'mysql';
+} else {
+    // Render PostgreSQL connection
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_NAME') ?: 'new_registration_data';
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("PostgreSQL connection failed.");
+    $db_type = 'pgsql';
+}
+
+// Helper function for safe queries
+function safeQuery($sql, $params = []) {
+    global $conn, $db_type;
+    if ($db_type === 'mysql') {
+        $stmt = $conn->prepare($sql);
+        if (!empty($params)) {
+            $types = str_repeat('s', count($params)); // assuming all string
+            $stmt->bind_param($types, ...$params);
         }
+        $stmt->execute();
+        return $stmt->get_result();
+    } else {
+        // PostgreSQL
+        $result = pg_query_params($conn, $sql, $params);
+        return $result;
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

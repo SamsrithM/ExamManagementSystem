@@ -12,53 +12,78 @@ if ($test_id <= 0) {
     die("Invalid exam selected.");
 }
 
-// --- DB connection using environment variables ---
+// --- DB environment variables ---
+$db_type = getenv('DB_TYPE') ?: 'mysql'; // mysql or pgsql
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_TEST') ?: 'test_creation';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("DB connection failed: " . $conn->connect_error);
-}
-
-// Get test title and duration
-$stmt = $conn->prepare("SELECT test_title, duration, branch, test_date FROM tests WHERE test_id=?");
-$stmt->bind_param("i", $test_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$test = $result->fetch_assoc();
-$stmt->close();
-
-if (!$test) {
-    die("Exam not found.");
-}
-$duration_minutes = intval($test['duration']);
-
-// Fetch only multiple choice questions
-$stmt = $conn->prepare("SELECT id, question_text, options, correct_answer 
-                        FROM questions 
-                        WHERE test_id=? AND question_type='objective' 
-                        ORDER BY id ASC");
-$stmt->bind_param("i", $test_id);
-$stmt->execute();
-$result = $stmt->get_result();
+// --- Initialize variables ---
+$test = null;
 $questions = [];
-while ($row = $result->fetch_assoc()) {
-    $decoded_options = json_decode($row['options'], true);
-    if (!is_array($decoded_options)) {
-        $decoded_options = [$row['options']];
-    }
-    $row['options'] = $decoded_options;
-    $questions[] = $row;
-}
-$stmt->close();
-$conn->close();
 
-if (empty($questions)) {
-    die("No multiple-choice questions found for this exam.");
+if ($db_type === 'mysql') {
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("DB connection failed: " . $conn->connect_error);
+
+    // Get test details
+    $stmt = $conn->prepare("SELECT test_title, duration, branch, test_date FROM tests WHERE test_id=?");
+    $stmt->bind_param("i", $test_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $test = $res->fetch_assoc();
+    $stmt->close();
+
+    if (!$test) die("Exam not found.");
+
+    // Fetch questions (objective)
+    $stmt = $conn->prepare("SELECT id, question_text, options, correct_answer 
+                            FROM questions 
+                            WHERE test_id=? AND question_type='objective' 
+                            ORDER BY id ASC");
+    $stmt->bind_param("i", $test_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $decoded_options = json_decode($row['options'], true);
+        if (!is_array($decoded_options)) $decoded_options = [$row['options']];
+        $row['options'] = $decoded_options;
+        $questions[] = $row;
+    }
+    $stmt->close();
+    $conn->close();
+} elseif ($db_type === 'pgsql') {
+    $conn_string = "host=$db_host dbname=$db_name user=$db_user password=$db_pass";
+    $conn = pg_connect($conn_string);
+    if (!$conn) die("PostgreSQL connection failed.");
+
+    // Get test details
+    $res = pg_prepare($conn, "get_test", "SELECT test_title, duration, branch, test_date FROM tests WHERE test_id=$1");
+    $res = pg_execute($conn, "get_test", [$test_id]);
+    $test = pg_fetch_assoc($res);
+    pg_free_result($res);
+    if (!$test) die("Exam not found.");
+
+    // Fetch questions (objective)
+    $res = pg_prepare($conn, "get_questions", "SELECT id, question_text, options, correct_answer 
+                                               FROM questions 
+                                               WHERE test_id=$1 AND question_type='objective' 
+                                               ORDER BY id ASC");
+    $res = pg_execute($conn, "get_questions", [$test_id]);
+    while ($row = pg_fetch_assoc($res)) {
+        $decoded_options = json_decode($row['options'], true);
+        if (!is_array($decoded_options)) $decoded_options = [$row['options']];
+        $row['options'] = $decoded_options;
+        $questions[] = $row;
+    }
+    pg_free_result($res);
+    pg_close($conn);
 }
+
+if (empty($questions)) die("No multiple-choice questions found for this exam.");
+
+$duration_minutes = intval($test['duration']);
 ?>
 
 <!DOCTYPE html>

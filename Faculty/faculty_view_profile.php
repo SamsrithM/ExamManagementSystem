@@ -10,7 +10,7 @@ if (!isset($_SESSION['faculty_user'])) {
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
-$db_name   = getenv('FACULTY_DETAILS_DB') ?: 'new_registration_data';
+$db_name   = getenv('DB_NAME') ?: 'new_registration_data';
 
 // Connect to faculty details database
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);

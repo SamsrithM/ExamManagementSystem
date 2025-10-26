@@ -3,7 +3,7 @@ session_start();
 header('Content-Type: text/html; charset=UTF-8');
 
 // Fetch DB credentials from environment variables
-$host = getenv('DB_HOST') ?: 'localhost';
+$host = getenv('DB_HOST') ?: '127.0.0.1';
 $user = getenv('DB_USER') ?: 'root';
 $pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('STUDENT_DB') ?: 'student_management';

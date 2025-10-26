@@ -1,58 +1,72 @@
 <?php
-session_start(); // ✅ Needed to access logged-in faculty info
+session_start(); // Needed to access logged-in faculty info
 
 // --- POST request handler ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // Get JSON body
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // Database connection using environment variables
-    $db_host = getenv('DB_HOST') ?: 'mysql';
-    $db_user = getenv('DB_USER') ?: 'root';
-    $db_pass = getenv('DB_PASS') ?: '';
-    $db_name = getenv('DB_TEST') ?: 'test_creation';
+    // Detect environment
+    $env = getenv('RENDER') ? 'render' : 'local';
 
-    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-    if ($conn->connect_error) {
-        die(json_encode(['status'=>'error','message'=>'Database connection failed.']));
+    if ($env === 'local') {
+        $db_host = 'localhost';
+        $db_user = 'root';
+        $db_pass = '';
+        $db_name = 'test_creation';
+        $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+        if ($conn->connect_error) die(json_encode(['status'=>'error','message'=>'DB connection failed']));
+    } else {
+        $db_host = getenv('DB_HOST');
+        $db_port = getenv('DB_PORT') ?: '5432';
+        $db_user = getenv('DB_USER');
+        $db_pass = getenv('DB_PASS');
+        $db_name = getenv('DB_TEST') ?: 'test_creation';
+        $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+        if (!$conn) die(json_encode(['status'=>'error','message'=>'PostgreSQL connection failed']));
     }
 
-    // Extract form values
-    $branch        = $conn->real_escape_string($data['branch'] ?? '');
-    $title         = $conn->real_escape_string($data['title'] ?? '');
-    $date          = $conn->real_escape_string($data['date'] ?? '');
-    $availableFrom = $conn->real_escape_string($data['availableFrom'] ?? '');
+    // Extract and sanitize
+    $branch        = $data['branch'] ?? '';
+    $title         = $data['title'] ?? '';
+    $date          = $data['date'] ?? '';
+    $availableFrom = $data['availableFrom'] ?? '';
     $duration      = (int)($data['duration'] ?? 0);
-    $type          = $conn->real_escape_string($data['type'] ?? '');
+    $type          = $data['type'] ?? '';
 
-    // Validate
     if (!$branch || !$title || !$date || !$availableFrom || !$duration || !$type) {
-        echo json_encode(['status'=>'error','message'=>'All fields are required.']);
-        exit;
+        echo json_encode(['status'=>'error','message'=>'All fields are required.']); exit;
     }
 
-    // Check if faculty is logged in
     if (!isset($_SESSION['faculty_user'])) {
-        echo json_encode(['status'=>'error','message'=>'Faculty not logged in.']);
-        exit;
+        echo json_encode(['status'=>'error','message'=>'Faculty not logged in.']); exit;
     }
-    $created_by = $conn->real_escape_string($_SESSION['faculty_user']);
+    $created_by = $_SESSION['faculty_user'];
 
     // Insert test
-    $sql = "INSERT INTO tests (branch, test_title, test_date, available_from, duration, test_type, created_by)
-            VALUES ('$branch','$title','$date','$availableFrom',$duration,'$type','$created_by')";
-
-    if ($conn->query($sql) === TRUE) {
-        echo json_encode(['status'=>'success','test_id'=>$conn->insert_id]);
+    if ($env === 'local') {
+        $stmt = $conn->prepare("INSERT INTO tests (branch, test_title, test_date, available_from, duration, test_type, created_by)
+                                VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssiss", $branch, $title, $date, $availableFrom, $duration, $type, $created_by);
+        if ($stmt->execute()) echo json_encode(['status'=>'success','test_id'=>$stmt->insert_id]);
+        else echo json_encode(['status'=>'error','message'=>$stmt->error]);
+        $stmt->close(); $conn->close();
     } else {
-        echo json_encode(['status'=>'error','message'=>'Insert failed: '.$conn->error]);
+        $result = pg_query_params($conn, "INSERT INTO tests (branch, test_title, test_date, available_from, duration, test_type, created_by)
+                                          VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING test_id",
+                                   [$branch,$title,$date,$availableFrom,$duration,$type,$created_by]);
+        if ($result && pg_num_rows($result)) {
+            $test_id = pg_fetch_result($result, 0, 'test_id');
+            echo json_encode(['status'=>'success','test_id'=>$test_id]);
+        } else {
+            echo json_encode(['status'=>'error','message'=>'Insert failed']);
+        }
+        pg_close($conn);
     }
-
-    $conn->close();
     exit;
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

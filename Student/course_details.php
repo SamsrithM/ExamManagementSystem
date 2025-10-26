@@ -13,34 +13,73 @@ if (empty($course_code)) {
     die("Invalid course selected.");
 }
 
-// Database connection using environment variables
-$db_host = getenv('DB_HOST') ?: '127.0.0.1';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_TEST') ?: 'test_creation';
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
 
-$test_db = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($test_db->connect_error) {
-    die("Test DB connection failed: " . $test_db->connect_error);
+// Database connection
+if ($env === 'local') {
+    $db_host = getenv('DB_HOST') ?: '127.0.0.1';
+    $db_user = getenv('DB_USER') ?: 'root';
+    $db_pass = getenv('DB_PASS') ?: '';
+    $db_name = getenv('DB_TEST') ?: 'test_creation';
+
+    $test_db = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($test_db->connect_error) die("Test DB connection failed: " . $test_db->connect_error);
+    $test_db->set_charset("utf8");
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_TEST') ?: 'test_creation';
+
+    $test_db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$test_db) die("PostgreSQL connection failed!");
 }
 
-// Get published exams for this course
+// Fetch published exams for this course
 $exams = [];
-$stmt = $test_db->prepare("
-    SELECT t.test_id, t.test_title, t.test_date, t.available_from, t.duration, t.test_type, p.published_at
-    FROM published_exam p
-    JOIN tests t ON p.test_id = t.test_id
-    WHERE p.course_code = ?
-    ORDER BY t.test_date ASC
-");
-$stmt->bind_param("s", $course_code);
-$stmt->execute();
-$res = $stmt->get_result();
-while ($row = $res->fetch_assoc()) {
-    $exams[] = $row;
+
+if ($env === 'local') {
+    $stmt = $test_db->prepare("
+        SELECT t.test_id, t.test_title, t.test_date, t.available_from, t.duration, t.test_type, p.published_at
+        FROM published_exam p
+        JOIN tests t ON p.test_id = t.test_id
+        WHERE p.course_code = ?
+        ORDER BY t.test_date ASC
+    ");
+    $stmt->bind_param("s", $course_code);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $exams[] = $row;
+    $stmt->close();
+} else {
+    $res = pg_query_params($test_db, "
+        SELECT t.test_id, t.test_title, t.test_date, t.available_from, t.duration, t.test_type, p.published_at
+        FROM published_exam p
+        JOIN tests t ON p.test_id = t.test_id
+        WHERE p.course_code = $1
+        ORDER BY t.test_date ASC
+    ", [$course_code]);
+
+    while ($row = pg_fetch_assoc($res)) $exams[] = $row;
 }
-$stmt->close();
-$test_db->close();
+
+// Helper function to check if exam already taken
+function already_taken($env, $db, $roll_number, $test_id) {
+    if ($env === 'local') {
+        $stmt = $db->prepare("SELECT 1 FROM marks_awarded WHERE roll_number=? AND test_id=?");
+        $stmt->bind_param("si", $roll_number, $test_id);
+        $stmt->execute();
+        $stmt->store_result();
+        $taken = $stmt->num_rows > 0;
+        $stmt->close();
+        return $taken;
+    } else {
+        $res = pg_query_params($db, "SELECT 1 FROM marks_awarded WHERE roll_number=$1 AND test_id=$2", [$roll_number, $test_id]);
+        return pg_num_rows($res) > 0;
+    }
+}
 ?>
 
 <!DOCTYPE html>

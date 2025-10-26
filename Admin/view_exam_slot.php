@@ -1,35 +1,54 @@
 <?php
-// view_slots.php
+session_start();
 
-// Database connection using environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_ROOM') ?: 'room_allocation';
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+// DB connection
+if ($env === 'local') {
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'room_allocation';
 
-// Check connection
-if ($conn->connect_error) {
-    die("<h3>Database connection failed: " . $conn->connect_error . "</h3>");
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("<h3>Database connection failed: " . $conn->connect_error . "</h3>");
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_ROOM') ?: 'room_allocation';
+
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h3>PostgreSQL connection failed.</h3>");
 }
 
 // Handle deletion
-$delete_message = '';
 if (isset($_GET['delete_id'])) {
-    $delete_id = intval($_GET['delete_id']); // sanitize input
-    if ($conn->query("DELETE FROM faculty_slot_selection WHERE slot_id = $delete_id")) {
-        $delete_message = "Slot ID $delete_id deleted successfully!";
+    $delete_id = intval($_GET['delete_id']); // sanitize
+    if ($env === 'local') {
+        $conn->query("DELETE FROM faculty_slot_selection WHERE slot_id = $delete_id");
     } else {
-        $delete_message = "Error deleting Slot ID $delete_id!";
+        pg_query_params($conn, "DELETE FROM faculty_slot_selection WHERE slot_id = $1", [$delete_id]);
     }
 }
 
 // Fetch faculty slot selection data
-$sql = "SELECT faculty_email, slot_id, slot_date, slot_time, selected_at 
-        FROM faculty_slot_selection 
-        ORDER BY slot_date, slot_time";
-$result = $conn->query($sql);
+$slots = [];
+if ($env === 'local') {
+    $sql = "SELECT faculty_email, slot_id, slot_date, slot_time, selected_at FROM faculty_slot_selection ORDER BY slot_date, slot_time";
+    $result = $conn->query($sql);
+    if ($result) while ($row = $result->fetch_assoc()) $slots[] = $row;
+} else {
+    $sql = "SELECT faculty_email, slot_id, slot_date, slot_time, selected_at FROM faculty_slot_selection ORDER BY slot_date, slot_time";
+    $result = pg_query($conn, $sql);
+    if ($result) while ($row = pg_fetch_assoc($result)) $slots[] = $row;
+}
+
+// Close connection
+if ($env === 'local') $conn->close();
+else pg_close($conn);
 ?>
 <!DOCTYPE html>
 <html lang="en">

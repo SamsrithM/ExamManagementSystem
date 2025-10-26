@@ -17,7 +17,7 @@ if (empty($course_code)) {
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('TEST_DB') ?: 'test_creation';
+$db_name = getenv('DB_TEST') ?: 'test_creation';
 
 $test_db = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($test_db->connect_error) {

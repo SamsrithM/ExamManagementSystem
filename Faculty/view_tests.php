@@ -9,43 +9,64 @@ if (!isset($_SESSION['faculty_user'])) {
 
 $faculty_email = $_SESSION['faculty_user'];
 
-// Use environment variables for DB credentials (Render-friendly)
-$host = getenv('DB_HOST') ?: 'mysql';
-$user = getenv('DB_USER') ?: 'root';
+// Detect environment
+$is_render = getenv('RENDER') ? true : false;
+
+// DB credentials
+$host = getenv('DB_HOST') ?: 'localhost';
+$user = getenv('DB_USER') ?: ($is_render ? 'postgres' : 'root');
 $pass = getenv('DB_PASS') ?: '';
 $db   = getenv('DB_TEST') ?: 'test_creation';
 
-// Create DB connection
-$conn = new mysqli($host, $user, $pass, $db);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Database connection failed.</h2>");
+$results = [];
+
+// Use PostgreSQL on Render
+if ($is_render) {
+    $conn = pg_connect("host=$host dbname=$db user=$user password=$pass");
+    if (!$conn) die("<h2 style='color:red;'>PostgreSQL connection failed</h2>");
+
+    // Handle deletion
+    if (isset($_GET['delete_id'])) {
+        $delete_id = (int)$_GET['delete_id'];
+        pg_query_params($conn, "DELETE FROM questions WHERE test_id=$1", [$delete_id]);
+        pg_query_params($conn, "DELETE FROM tests WHERE test_id=$1", [$delete_id]);
+        header("Location: view_tests.php");
+        exit;
+    }
+
+    $res = pg_query_params($conn, "SELECT * FROM tests WHERE created_by=$1 ORDER BY test_id DESC", [$faculty_email]);
+    while ($row = pg_fetch_assoc($res)) $results[] = $row;
+    pg_close($conn);
+
+} else {
+    // MySQL connection locally
+    $conn = new mysqli($host, $user, $pass, $db);
+    if ($conn->connect_error) die("<h2 style='color:red;'>MySQL connection failed</h2>");
+
+    if (isset($_GET['delete_id'])) {
+        $delete_id = (int)$_GET['delete_id'];
+        $stmt_del_q = $conn->prepare("DELETE FROM questions WHERE test_id=?");
+        $stmt_del_q->bind_param("i", $delete_id);
+        $stmt_del_q->execute();
+        $stmt_del_q->close();
+
+        $stmt_del_t = $conn->prepare("DELETE FROM tests WHERE test_id=?");
+        $stmt_del_t->bind_param("i", $delete_id);
+        $stmt_del_t->execute();
+        $stmt_del_t->close();
+
+        header("Location: view_tests.php");
+        exit;
+    }
+
+    $stmt = $conn->prepare("SELECT * FROM tests WHERE created_by=? ORDER BY test_id DESC");
+    $stmt->bind_param("s", $faculty_email);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $results[] = $row;
+    $stmt->close();
+    $conn->close();
 }
-
-// Handle deletion safely
-if (isset($_GET['delete_id'])) {
-    $delete_id = (int)$_GET['delete_id'];
-
-    // Delete associated questions
-    $stmt_del_q = $conn->prepare("DELETE FROM questions WHERE test_id = ?");
-    $stmt_del_q->bind_param("i", $delete_id);
-    $stmt_del_q->execute();
-    $stmt_del_q->close();
-
-    // Delete the test
-    $stmt_del_t = $conn->prepare("DELETE FROM tests WHERE test_id = ?");
-    $stmt_del_t->bind_param("i", $delete_id);
-    $stmt_del_t->execute();
-    $stmt_del_t->close();
-
-    header("Location: view_tests.php");
-    exit;
-}
-
-// Fetch all tests created by the logged-in faculty
-$stmt = $conn->prepare("SELECT * FROM tests WHERE created_by = ? ORDER BY test_id DESC");
-$stmt->bind_param("s", $faculty_email);
-$stmt->execute();
-$result = $stmt->get_result();
 ?>
 
 

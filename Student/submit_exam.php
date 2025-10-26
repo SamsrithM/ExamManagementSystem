@@ -24,65 +24,114 @@ if ($test_id <= 0) {
     exit;
 }
 
-// --- DB Connection using environment variables ---
+// --- Environment variables ---
+$db_type = getenv('DB_TYPE') ?: 'mysql'; // "mysql" or "pgsql"
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_TEST') ?: 'test_creation';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    echo "<h2 style='text-align:center;color:red;margin-top:50px;'>DB connection failed: ".$conn->connect_error."</h2>";
-    exit;
-}
-
-// --- Create marks_awarded table if not exists ---
-$conn->query("
-CREATE TABLE IF NOT EXISTS marks_awarded (
-    roll_number VARCHAR(50),
-    test_id INT,
-    marks_obtained INT,
-    total_marks INT,
-    PRIMARY KEY(roll_number, test_id)
-) ENGINE=InnoDB;
-");
-
-// --- Fetch questions and correct answers ---
-$stmt = $conn->prepare("SELECT id, question_type, correct_answer FROM questions WHERE test_id=?");
-$stmt->bind_param("i", $test_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$questions = [];
 $total_marks = 0;
-
-while ($row = $result->fetch_assoc()) {
-    $questions[$row['id']] = $row;
-    if ($row['question_type'] == 'objective') $total_marks++;
-}
-$stmt->close();
-
-// --- Calculate obtained marks ---
 $marks_obtained = 0;
-foreach ($answers as $qid => $selectedLetter) {
-    $qid = intval($qid);
-    if (!isset($questions[$qid])) continue;
-    $q = $questions[$qid];
-    if ($q['question_type'] == 'objective' && strtoupper(trim($selectedLetter)) == strtoupper(trim($q['correct_answer']))) {
-        $marks_obtained++;
+$questions = [];
+
+// --- MySQL mode ---
+if ($db_type === 'mysql') {
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("<h2 style='text-align:center;color:red;margin-top:50px;'>DB connection failed: ".$conn->connect_error."</h2>");
+
+    // Create marks_awarded table if not exists
+    $conn->query("
+    CREATE TABLE IF NOT EXISTS marks_awarded (
+        roll_number VARCHAR(50),
+        test_id INT,
+        marks_obtained INT,
+        total_marks INT,
+        PRIMARY KEY(roll_number, test_id)
+    ) ENGINE=InnoDB;
+    ");
+
+    // Fetch questions
+    $stmt = $conn->prepare("SELECT id, question_type, correct_answer FROM questions WHERE test_id=?");
+    $stmt->bind_param("i", $test_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $questions[$row['id']] = $row;
+        if ($row['question_type'] === 'objective') $total_marks++;
     }
+    $stmt->close();
+
+    // Calculate marks
+    foreach ($answers as $qid => $selectedLetter) {
+        $qid = intval($qid);
+        if (!isset($questions[$qid])) continue;
+        $q = $questions[$qid];
+        if ($q['question_type'] === 'objective' && strtoupper(trim($selectedLetter)) === strtoupper(trim($q['correct_answer']))) {
+            $marks_obtained++;
+        }
+    }
+
+    // Insert/update marks
+    $stmt = $conn->prepare("
+        INSERT INTO marks_awarded (roll_number, test_id, marks_obtained, total_marks)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE marks_obtained=?, total_marks=?
+    ");
+    $stmt->bind_param("siiiii", $roll_number, $test_id, $marks_obtained, $total_marks, $marks_obtained, $total_marks);
+    $stmt->execute();
+    $stmt->close();
+    $conn->close();
 }
 
-// --- Insert or update marks_awarded ---
-$stmt = $conn->prepare("
-INSERT INTO marks_awarded (roll_number, test_id, marks_obtained, total_marks)
-VALUES (?, ?, ?, ?)
-ON DUPLICATE KEY UPDATE marks_obtained=?, total_marks=?
-");
-$stmt->bind_param("siiiii", $roll_number, $test_id, $marks_obtained, $total_marks, $marks_obtained, $total_marks);
-$stmt->execute();
-$stmt->close();
-$conn->close();
+// --- PostgreSQL mode ---
+elseif ($db_type === 'pgsql') {
+    $conn_string = "host=$db_host dbname=$db_name user=$db_user password=$db_pass";
+    $conn = pg_connect($conn_string);
+    if (!$conn) die("<h2 style='text-align:center;color:red;margin-top:50px;'>PostgreSQL connection failed.</h2>");
+
+    // Create table if not exists
+    pg_query($conn, "
+    CREATE TABLE IF NOT EXISTS marks_awarded (
+        roll_number VARCHAR(50),
+        test_id INT,
+        marks_obtained INT,
+        total_marks INT,
+        PRIMARY KEY(roll_number, test_id)
+    );
+    ");
+
+    // Fetch questions
+    $res = pg_prepare($conn, "get_questions", "SELECT id, question_type, correct_answer FROM questions WHERE test_id=$1");
+    $res = pg_execute($conn, "get_questions", [$test_id]);
+    while ($row = pg_fetch_assoc($res)) {
+        $questions[$row['id']] = $row;
+        if ($row['question_type'] === 'objective') $total_marks++;
+    }
+    pg_free_result($res);
+
+    // Calculate marks
+    foreach ($answers as $qid => $selectedLetter) {
+        $qid = intval($qid);
+        if (!isset($questions[$qid])) continue;
+        $q = $questions[$qid];
+        if ($q['question_type'] === 'objective' && strtoupper(trim($selectedLetter)) === strtoupper(trim($q['correct_answer']))) {
+            $marks_obtained++;
+        }
+    }
+
+    // Insert or update marks
+    $upsert_query = "
+    INSERT INTO marks_awarded (roll_number, test_id, marks_obtained, total_marks)
+    VALUES ($1,$2,$3,$4)
+    ON CONFLICT (roll_number, test_id) DO UPDATE SET marks_obtained=$3, total_marks=$4;
+    ";
+    $res = pg_prepare($conn, "upsert_marks", $upsert_query);
+    $res = pg_execute($conn, "upsert_marks", [$roll_number, $test_id, $marks_obtained, $total_marks]);
+    pg_close($conn);
+}
 ?>
+
 
 <!DOCTYPE html>
 <html>

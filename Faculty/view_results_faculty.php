@@ -8,34 +8,55 @@ if (!isset($_SESSION['faculty_user'])) {
 
 $faculty_email = $_SESSION['faculty_user'];
 
-// DB connection using environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
+// Detect Render environment
+$is_render = getenv('RENDER') ? true : false;
+
+// DB credentials
+$db_host = getenv('DB_HOST') ?: ($is_render ? 'your_postgres_host' : 'localhost');
+$db_user = getenv('DB_USER') ?: ($is_render ? 'postgres' : 'root');
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_TEST') ?: 'test_creation';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Database connection failed: " . $conn->connect_error . "</h2>");
-}
-
-// Fetch exams created by this faculty
-$stmt = $conn->prepare("
-    SELECT m.roll_number, m.test_id, m.marks_obtained, m.total_marks, m.submitted_at, t.test_title, t.test_date
-    FROM marks_awarded m
-    JOIN tests t ON m.test_id = t.test_id
-    WHERE t.created_by = ?
-    ORDER BY t.test_date DESC, m.submitted_at DESC
-");
-$stmt->bind_param("s", $faculty_email);
-$stmt->execute();
-$result = $stmt->get_result();
 $results = [];
-while ($row = $result->fetch_assoc()) {
-    $results[] = $row;
+
+if ($is_render) {
+    // PostgreSQL connection
+    $conn = pg_connect("host=$db_host dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h2 style='color:red;'>PostgreSQL connection failed</h2>");
+
+    $query = "SELECT m.roll_number, m.test_id, m.marks_obtained, m.total_marks, m.submitted_at,
+                     t.test_title, t.test_date
+              FROM marks_awarded m
+              JOIN tests t ON m.test_id = t.test_id
+              WHERE t.created_by = $1
+              ORDER BY t.test_date DESC, m.submitted_at DESC";
+    $res = pg_prepare($conn, "faculty_results", $query);
+    $res = pg_execute($conn, "faculty_results", [$faculty_email]);
+
+    while ($row = pg_fetch_assoc($res)) {
+        $results[] = $row;
+    }
+    pg_close($conn);
+} else {
+    // MySQL connection
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("<h2 style='color:red;'>MySQL connection failed: " . $conn->connect_error . "</h2>");
+
+    $stmt = $conn->prepare("
+        SELECT m.roll_number, m.test_id, m.marks_obtained, m.total_marks, m.submitted_at,
+               t.test_title, t.test_date
+        FROM marks_awarded m
+        JOIN tests t ON m.test_id = t.test_id
+        WHERE t.created_by = ?
+        ORDER BY t.test_date DESC, m.submitted_at DESC
+    ");
+    $stmt->bind_param("s", $faculty_email);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $results[] = $row;
+    $stmt->close();
+    $conn->close();
 }
-$stmt->close();
-$conn->close();
 ?>
 
 <!DOCTYPE html>

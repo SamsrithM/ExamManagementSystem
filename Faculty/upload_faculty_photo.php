@@ -8,15 +8,26 @@ if (!isset($_SESSION['faculty_user'])) {
 
 $faculty_email = $_SESSION['faculty_user'];
 
-// Database connection using environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
+// Detect environment
+$is_render = getenv('RENDER') ? true : false;
+
+// DB credentials
+$db_host = getenv('DB_HOST') ?: ($is_render ? 'your_postgres_host' : 'localhost');
+$db_user = getenv('DB_USER') ?: ($is_render ? 'postgres' : 'root');
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_NAME') ?: 'new_registration_data';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
+if ($is_render) {
+    // --- PostgreSQL connection ---
+    $conn = pg_connect("host=$db_host dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h3 style='color:red; text-align:center;'>DB connection failed</h3>");
+} else {
+    // --- MySQL connection ---
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("<h3 style='color:red; text-align:center;'>Connection failed: " . $conn->connect_error . "</h3>");
+}
 
+// Handle file upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
     if ($_FILES['photo']['error'] === 0) {
         $file_name = $_FILES['photo']['name'];
@@ -33,11 +44,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
             $target_file = $upload_dir . $new_file_name;
 
             if (move_uploaded_file($file_tmp, $target_file)) {
-                $stmt = $conn->prepare("UPDATE faculty_new_data SET photo=? WHERE email=?");
-                $stmt->bind_param("ss", $new_file_name, $faculty_email);
-                $stmt->execute();
-                $stmt->close();
-                $conn->close();
+                // --- Update photo in DB ---
+                if ($is_render) {
+                    // PostgreSQL
+                    $stmt = pg_prepare($conn, "update_photo", "UPDATE faculty_new_data SET photo=$1 WHERE email=$2");
+                    pg_execute($conn, "update_photo", [$new_file_name, $faculty_email]);
+                    pg_close($conn);
+                } else {
+                    // MySQL
+                    $stmt = $conn->prepare("UPDATE faculty_new_data SET photo=? WHERE email=?");
+                    $stmt->bind_param("ss", $new_file_name, $faculty_email);
+                    $stmt->execute();
+                    $stmt->close();
+                    $conn->close();
+                }
 
                 header("Location: faculty_view_profile.php");
                 exit;
@@ -54,3 +74,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
     echo "<h3 style='color:red; text-align:center;'>No file uploaded.</h3>";
 }
 ?>
+

@@ -1,32 +1,57 @@
 <?php
 session_start();
 
-// Database connection using environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
+// Detect environment
+$is_render = getenv('RENDER') ? true : false;
+
+// DB credentials
+$db_host = getenv('DB_HOST') ?: ($is_render ? 'your_postgres_host' : 'localhost');
+$db_user = getenv('DB_USER') ?: ($is_render ? 'postgres' : 'root');
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_TEST') ?: 'test_creation';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Database connection failed: " . $conn->connect_error . "</h2>");
+// Connect to DB
+if ($is_render) {
+    $conn = pg_connect("host=$db_host dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h2 style='color:red;'>PostgreSQL connection failed</h2>");
+} else {
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("<h2 style='color:red;'>MySQL connection failed: " . $conn->connect_error . "</h2>");
 }
 
 $test_id = isset($_GET['test_id']) ? (int)$_GET['test_id'] : 0;
 
-// Fetch test details securely
-$stmt = $conn->prepare("SELECT * FROM tests WHERE test_id = ?");
-$stmt->bind_param("i", $test_id);
-$stmt->execute();
-$test_result = $stmt->get_result();
-$test = $test_result->fetch_assoc();
-$stmt->close();
+// Fetch test details
+$test = [];
+if ($is_render) {
+    $res = pg_prepare($conn, "get_test", "SELECT * FROM tests WHERE test_id=$1");
+    $res = pg_execute($conn, "get_test", [$test_id]);
+    $test = pg_fetch_assoc($res);
+} else {
+    $stmt = $conn->prepare("SELECT * FROM tests WHERE test_id = ?");
+    $stmt->bind_param("i", $test_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $test = $result->fetch_assoc();
+    $stmt->close();
+}
 
-// Fetch questions securely
-$stmt_q = $conn->prepare("SELECT * FROM questions WHERE test_id = ?");
-$stmt_q->bind_param("i", $test_id);
-$stmt_q->execute();
-$question_result = $stmt_q->get_result();
+// Fetch questions
+$questions = [];
+if ($is_render) {
+    $res_q = pg_prepare($conn, "get_questions", "SELECT * FROM questions WHERE test_id=$1");
+    $res_q = pg_execute($conn, "get_questions", [$test_id]);
+    while ($row = pg_fetch_assoc($res_q)) $questions[] = $row;
+} else {
+    $stmt_q = $conn->prepare("SELECT * FROM questions WHERE test_id = ?");
+    $stmt_q->bind_param("i", $test_id);
+    $stmt_q->execute();
+    $result_q = $stmt_q->get_result();
+    while ($row = $result_q->fetch_assoc()) $questions[] = $row;
+    $stmt_q->close();
+}
+
+if (!$is_render) $conn->close();
 ?>
 
 <!DOCTYPE html>

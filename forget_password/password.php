@@ -7,17 +7,40 @@ require 'PHPMailer/src/Exception.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-// Database connections
-$host = "127.0.0.1";
-$user = "root";
-$pass = "";
-$new_reg_conn = getenv('DB_NAME') ?: 'new_registration_data';
-$student_conn = getenv('DB_NAME') ?: 'new_registration_data';
-$faculty_conn = getenv('DB_NAME') ?: 'new_registration_data';
-$admin_conn = getenv('DB_NAME') ?: 'new_registration_data';
+// Environment detection
+$env = getenv('RENDER') ? 'render' : 'local';
 
-if ($new_reg_conn->connect_error || $student_conn->connect_error || $faculty_conn->connect_error || $admin_conn->connect_error) {
-    die("Database connection failed.");
+// Database connections
+if ($env === 'local') {
+    // MySQL local
+    $db_host = '127.0.0.1';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = getenv('DB_NAME') ?: 'new_registration_data';
+
+    $new_reg_conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    $student_conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    $faculty_conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    $admin_conn   = new mysqli($db_host, $db_user, $db_pass, $db_name);
+
+    foreach ([$new_reg_conn, $student_conn, $faculty_conn, $admin_conn] as $conn) {
+        if ($conn->connect_error) die("MySQL connection failed: " . $conn->connect_error);
+        $conn->set_charset("utf8");
+    }
+} else {
+    // PostgreSQL on Render
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: 5432;
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_NAME') ?: 'new_registration_data';
+
+    $new_reg_conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    $student_conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    $faculty_conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    $admin_conn   = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+
+    if (!$new_reg_conn || !$student_conn || !$faculty_conn || !$admin_conn) die("PostgreSQL connection failed!");
 }
 
 $message = '';
@@ -25,7 +48,6 @@ $show_otp_form = false;
 $otp_remaining = 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
     $role = $_POST['role'] ?? '';
 
     // Step 1: Send OTP
@@ -35,12 +57,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($roll_number)) {
                 $message = "Please enter your roll number.";
             } else {
-                $stmt = $new_reg_conn->prepare("SELECT institute_email FROM students_new_data WHERE roll_number=?");
-                $stmt->bind_param("s", $roll_number);
-                $stmt->execute();
-                $stmt->bind_result($email_db);
-                $stmt->fetch();
-                $stmt->close();
+                if ($env === 'local') {
+                    $stmt = $new_reg_conn->prepare("SELECT institute_email FROM students_new_data WHERE roll_number=?");
+                    $stmt->bind_param("s", $roll_number);
+                    $stmt->execute();
+                    $stmt->bind_result($email_db);
+                    $stmt->fetch();
+                    $stmt->close();
+                } else {
+                    $res = pg_query_params($new_reg_conn, "SELECT institute_email FROM students_new_data WHERE roll_number=$1", [$roll_number]);
+                    $row = pg_fetch_assoc($res);
+                    $email_db = $row['institute_email'] ?? '';
+                }
 
                 if (empty($email_db)) {
                     $message = "Roll number not registered.";
@@ -52,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['otp_email'] = $email_db;
                     $_SESSION['otp_time'] = time();
 
+                    // Send OTP email
                     $mail = new PHPMailer(true);
                     try {
                         $mail->isSMTP();
@@ -83,16 +112,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($email)) {
                 $message = "Please enter your registered email.";
             } else {
-                if ($role === 'faculty') {
-                    $stmt = $new_reg_conn->prepare("SELECT email FROM faculty_new_data WHERE email=?");
-                } else { // admin
-                    $stmt = $admin_conn->prepare("SELECT email FROM admin WHERE email=?");
+                if ($env === 'local') {
+                    if ($role === 'faculty') {
+                        $stmt = $new_reg_conn->prepare("SELECT email FROM faculty_new_data WHERE email=?");
+                    } else {
+                        $stmt = $admin_conn->prepare("SELECT email FROM admin WHERE email=?");
+                    }
+                    $stmt->bind_param("s", $email);
+                    $stmt->execute();
+                    $stmt->store_result();
+                    $exists = $stmt->num_rows > 0;
+                    $stmt->close();
+                } else {
+                    if ($role === 'faculty') {
+                        $res = pg_query_params($new_reg_conn, "SELECT email FROM faculty_new_data WHERE email=$1", [$email]);
+                    } else {
+                        $res = pg_query_params($admin_conn, "SELECT email FROM admin WHERE email=$1", [$email]);
+                    }
+                    $exists = pg_num_rows($res) > 0;
                 }
-                $stmt->bind_param("s", $email);
-                $stmt->execute();
-                $stmt->store_result();
 
-                if ($stmt->num_rows === 0) {
+                if (!$exists) {
                     $message = "Email not registered for the selected role.";
                 } else {
                     $otp = rand(100000, 999999);
@@ -102,7 +142,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['otp_time'] = time();
 
                     if ($role !== 'admin') {
-                        // Send OTP email for faculty
                         $mail = new PHPMailer(true);
                         try {
                             $mail->isSMTP();
@@ -131,7 +170,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $show_otp_form = true;
                     $otp_remaining = 600;
                 }
-                $stmt->close();
             }
         } else {
             $message = "Please select a valid role.";
@@ -160,30 +198,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = "Invalid OTP. Please try again.";
             $show_otp_form = true;
         } else {
+            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+
             if ($role === 'student') {
                 $roll_number = $_SESSION['otp_roll'];
-                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                $stmt = $student_conn->prepare("UPDATE students SET student_password=? WHERE student_username=?");
-                $stmt->bind_param("ss", $hashed_password, $roll_number);
+                if ($env === 'local') {
+                    $stmt = $student_conn->prepare("UPDATE students SET student_password=? WHERE student_username=?");
+                    $stmt->bind_param("ss", $hashed_password, $roll_number);
+                    $stmt->execute();
+                    $stmt->close();
+                } else {
+                    pg_query_params($student_conn, "UPDATE students SET student_password=$1 WHERE student_username=$2", [$hashed_password, $roll_number]);
+                }
             } elseif ($role === 'faculty') {
                 $email = $_SESSION['otp_email'];
-                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                $stmt = $faculty_conn->prepare("UPDATE faculty SET password=? WHERE username=?");
-                $stmt->bind_param("ss", $hashed_password, $email);
+                if ($env === 'local') {
+                    $stmt = $faculty_conn->prepare("UPDATE faculty SET password=? WHERE username=?");
+                    $stmt->bind_param("ss", $hashed_password, $email);
+                    $stmt->execute();
+                    $stmt->close();
+                } else {
+                    pg_query_params($faculty_conn, "UPDATE faculty SET password=$1 WHERE username=$2", [$hashed_password, $email]);
+                }
             } elseif ($role === 'admin') {
                 $email = $_SESSION['otp_email'];
-                $stmt = $admin_conn->prepare("UPDATE admin SET admin_password=? WHERE email=?");
-                $stmt->bind_param("ss", $new_password, $email);
+                if ($env === 'local') {
+                    $stmt = $admin_conn->prepare("UPDATE admin SET admin_password=? WHERE email=?");
+                    $stmt->bind_param("ss", $hashed_password, $email);
+                    $stmt->execute();
+                    $stmt->close();
+                } else {
+                    pg_query_params($admin_conn, "UPDATE admin SET admin_password=$1 WHERE email=$2", [$hashed_password, $email]);
+                }
             }
 
-            if ($stmt && $stmt->execute()) {
-                $message = "Password updated successfully! You can now <a href='login.php'>login</a>.";
-                unset($_SESSION['otp'], $_SESSION['otp_email'], $_SESSION['otp_roll'], $_SESSION['otp_time'], $_SESSION['otp_role']);
-            } else {
-                $message = "Error updating password: " . ($stmt ? $stmt->error : "Invalid role.");
-                $show_otp_form = true;
-            }
-            if ($stmt) $stmt->close();
+            $message = "Password updated successfully! You can now <a href='login.php'>login</a>.";
+            unset($_SESSION['otp'], $_SESSION['otp_email'], $_SESSION['otp_roll'], $_SESSION['otp_time'], $_SESSION['otp_role']);
         }
     }
 }
@@ -199,10 +249,18 @@ if ($show_otp_form && isset($_SESSION['otp_time'])) {
     }
 }
 
-$student_conn->close();
-$faculty_conn->close();
-$admin_conn->close();
-$new_reg_conn->close();
+// Close connections
+if ($env === 'local') {
+    $student_conn->close();
+    $faculty_conn->close();
+    $admin_conn->close();
+    $new_reg_conn->close();
+} else {
+    pg_close($student_conn);
+    pg_close($faculty_conn);
+    pg_close($admin_conn);
+    pg_close($new_reg_conn);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -289,3 +347,4 @@ button:hover { background-color:#16a085; }
 
 </body>
 </html>
+

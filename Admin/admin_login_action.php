@@ -5,7 +5,7 @@ session_start(); // ✅ Start session at the very top
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: ''; // Default fallback
-$db_name = getenv('DB_NAME') ?: 'admin_data';
+$db_name = getenv('DB_ADMIN') ?: 'admin_data';
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {

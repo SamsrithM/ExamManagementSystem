@@ -13,7 +13,7 @@ $faculty_email = $_SESSION['faculty_user'];
 $host = getenv('DB_HOST') ?: '127.0.0.1';
 $user = getenv('DB_USER') ?: 'root';
 $pass = getenv('DB_PASS') ?: '';
-$db   = getenv('DB_NAME') ?: 'test_creation';
+$db   = getenv('DB_TEST') ?: 'test_creation';
 
 // Create DB connection
 $conn = new mysqli($host, $user, $pass, $db);

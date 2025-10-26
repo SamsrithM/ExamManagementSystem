@@ -10,7 +10,7 @@ if (!isset($_SESSION['faculty_user'])) {
 $faculty_email = $_SESSION['faculty_user'];
 
 // Use environment variables for DB credentials (Render-friendly)
-$host = getenv('DB_HOST') ?: 'localhost';
+$host = getenv('DB_HOST') ?: '127.0.0.1';
 $user = getenv('DB_USER') ?: 'root';
 $pass = getenv('DB_PASS') ?: '';
 $db   = getenv('DB_NAME') ?: 'test_creation';

@@ -7,79 +7,111 @@ if (!isset($_SESSION['admin_user'])) {
     exit;
 }
 
-// Database connection using Render environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_NAME') ?: 'new_registration_data';
+// Detect environment: Render sets an environment variable
+$env = getenv('RENDER') ? 'render' : 'local';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    $db_error = "Database connection failed: " . $conn->connect_error;
-    $students = [];
-    $selected_department = '';
-    $selected_batch = '';
+$students = [];
+$selected_department = '';
+$selected_batch = '';
+
+if ($env === 'local') {
+    // --- MySQL connection for XAMPP ---
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'new_registration_data';
+
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) {
+        $db_error = "Database connection failed: " . $conn->connect_error;
+        $conn = null;
+    } else {
+        $db_error = '';
+    }
 } else {
-    $db_error = '';
+    // --- PostgreSQL connection for Render ---
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_NAME');
+
+    $conn_string = "host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass";
+    $conn = pg_connect($conn_string);
+
+    if (!$conn) {
+        $db_error = "Database connection failed.";
+        $conn = null;
+    } else {
+        $db_error = '';
+    }
 }
 
-// Get all programs, departments, and batches from database
+// Get all programs, departments, and batches
 $programs = [];
 $departments = [];
 $batches = [];
 
 if (empty($db_error)) {
-    // Get unique programs
-    $result = $conn->query("SELECT DISTINCT course FROM students_new_data ORDER BY course");
-    while ($row = $result->fetch_assoc()) {
-        $programs[] = $row['course'];
-    }
-    
-    // Get unique departments
-    $result = $conn->query("SELECT DISTINCT department FROM students_new_data ORDER BY department");
-    while ($row = $result->fetch_assoc()) {
-        $departments[] = $row['department'];
-    }
-    
-    // Get unique batches
-    $result = $conn->query("SELECT DISTINCT batch FROM students_new_data ORDER BY batch");
-    while ($row = $result->fetch_assoc()) {
-        $batches[] = $row['batch'];
+    if ($env === 'local') {
+        $result = $conn->query("SELECT DISTINCT course FROM students_new_data ORDER BY course");
+        while ($row = $result->fetch_assoc()) $programs[] = $row['course'];
+
+        $result = $conn->query("SELECT DISTINCT department FROM students_new_data ORDER BY department");
+        while ($row = $result->fetch_assoc()) $departments[] = $row['department'];
+
+        $result = $conn->query("SELECT DISTINCT batch FROM students_new_data ORDER BY batch");
+        while ($row = $result->fetch_assoc()) $batches[] = $row['batch'];
+    } else {
+        $result = pg_query($conn, "SELECT DISTINCT course FROM students_new_data ORDER BY course");
+        while ($row = pg_fetch_assoc($result)) $programs[] = $row['course'];
+
+        $result = pg_query($conn, "SELECT DISTINCT department FROM students_new_data ORDER BY department");
+        while ($row = pg_fetch_assoc($result)) $departments[] = $row['department'];
+
+        $result = pg_query($conn, "SELECT DISTINCT batch FROM students_new_data ORDER BY batch");
+        while ($row = pg_fetch_assoc($result)) $batches[] = $row['batch'];
     }
 }
 
-// Get students by program, department and batch
+// Get students by program, department, and batch
 $students = [];
 $selected_program = '';
 $selected_department = '';
 $selected_batch = '';
 
-if (isset($_GET['program']) && isset($_GET['dept']) && isset($_GET['batch']) && empty($db_error)) {
+if (isset($_GET['program'], $_GET['dept'], $_GET['batch']) && empty($db_error)) {
     $selected_program = $_GET['program'];
     $selected_department = $_GET['dept'];
     $selected_batch = $_GET['batch'];
-    
-    $query = "SELECT student_id, first_name, last_name, gender, dob, batch, department, roll_number, institute_email, course, semester 
-              FROM students_new_data 
-              WHERE course = ? AND department = ? AND batch = ? 
-              ORDER BY roll_number ASC";
-    
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("ssi", $selected_program, $selected_department, $selected_batch);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    while ($row = $result->fetch_assoc()) {
-        $students[] = $row;
+
+    if ($env === 'local') {
+        $query = "SELECT student_id, first_name, last_name, gender, dob, batch, department, roll_number, institute_email, course, semester 
+                  FROM students_new_data 
+                  WHERE course = ? AND department = ? AND batch = ? 
+                  ORDER BY roll_number ASC";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ssi", $selected_program, $selected_department, $selected_batch);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) $students[] = $row;
+        $stmt->close();
+    } else {
+        $query = "SELECT student_id, first_name, last_name, gender, dob, batch, department, roll_number, institute_email, course, semester 
+                  FROM students_new_data 
+                  WHERE course=$1 AND department=$2 AND batch=$3 
+                  ORDER BY roll_number ASC";
+        $result = pg_query_params($conn, $query, [$selected_program, $selected_department, $selected_batch]);
+        while ($row = pg_fetch_assoc($result)) $students[] = $row;
     }
-    $stmt->close();
 }
 
+// Close connection
 if (!empty($conn)) {
-    $conn->close();
+    if ($env === 'local') $conn->close();
+    else pg_close($conn);
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">

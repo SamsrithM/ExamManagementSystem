@@ -7,28 +7,105 @@ if (!isset($_SESSION['admin_user'])) {
     exit;
 }
 
-// Database connection (render-ready using env variables)
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_COURSE') ?: 'course_registration_data';
+$message = "";
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Database connection failed: " . $conn->connect_error . "</h2>");
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
+
+// DB connection
+if ($env === 'local') {
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'course_registration_data';
+
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_COURSE');
+
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h2 style='color:red;'>PostgreSQL Connection failed.</h2>");
 }
 
 // Fetch all courses
-$courses = $conn->query("SELECT * FROM admin_courses ORDER BY created_at DESC");
-
-// Fetch all faculty for dropdown (from another DB)
-$faculty_conn = new mysqli($db_host, $db_user, $db_pass, getenv('FACULTY_DB') ?: 'new_registration_data');
-$faculty_list = $faculty_conn->query("SELECT faculty_id, first_name, last_name, email FROM faculty_new_data ORDER BY first_name ASC");
-$faculty_data = [];
-while ($f = $faculty_list->fetch_assoc()) {
-    $faculty_data[] = $f;
+$courses = [];
+if ($env === 'local') {
+    $result = $conn->query("SELECT * FROM admin_courses ORDER BY created_at DESC");
+    while ($row = $result->fetch_assoc()) $courses[] = $row;
+} else {
+    $result = pg_query($conn, "SELECT * FROM admin_courses ORDER BY created_at DESC");
+    while ($row = pg_fetch_assoc($result)) $courses[] = $row;
 }
-$faculty_conn->close();
+
+// Fetch faculty list from another DB
+$faculty_data = [];
+if ($env === 'local') {
+    $faculty_conn = new mysqli($db_host, $db_user, $db_pass, getenv('FACULTY_DB') ?: 'new_registration_data');
+    $faculty_list = $faculty_conn->query("SELECT faculty_id, first_name, last_name, email FROM faculty_new_data ORDER BY first_name ASC");
+    while ($f = $faculty_list->fetch_assoc()) $faculty_data[] = $f;
+    $faculty_conn->close();
+} else {
+    $faculty_conn = pg_connect("host=$db_host port=$db_port dbname=".getenv('FACULTY_DB')." user=$db_user password=$db_pass");
+    $faculty_list = pg_query($faculty_conn, "SELECT faculty_id, first_name, last_name, email FROM faculty_new_data ORDER BY first_name ASC");
+    while ($f = pg_fetch_assoc($faculty_list)) $faculty_data[] = $f;
+    pg_close($faculty_conn);
+}
+
+// Handle Add Course
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['add_course'])) {
+    $name = trim($_POST['course_name']);
+    $code = trim($_POST['course_code']);
+    $desc = trim($_POST['description']);
+
+    if ($env === 'local') {
+        $stmt = $conn->prepare("INSERT INTO admin_courses (course_name, course_code, description) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $name, $code, $desc);
+        if ($stmt->execute()) $message = "✅ Course added successfully.";
+        else $message = "❌ Error: " . $conn->error;
+        $stmt->close();
+    } else {
+        $result = pg_query_params($conn, "INSERT INTO admin_courses (course_name, course_code, description) VALUES ($1,$2,$3)", [$name,$code,$desc]);
+        $message = $result ? "✅ Course added successfully." : "❌ Error adding course.";
+    }
+
+    header("Location: ".$_SERVER['PHP_SELF']); exit;
+}
+
+// Handle Assign Faculty
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['assign_faculty'])) {
+    $course_id = $_POST['course_id'];
+    $faculty_id = $_POST['faculty_id'];
+    $faculty = array_filter($faculty_data, fn($f) => $f['faculty_id'] == $faculty_id);
+    $faculty = array_values($faculty)[0] ?? null;
+
+    if ($faculty) {
+        $faculty_name = $faculty['first_name']." ".$faculty['last_name'];
+        $faculty_email = $faculty['email'];
+
+        if ($env === 'local') {
+            $stmt = $conn->prepare("UPDATE admin_courses SET assigned_faculty_name=?, assigned_faculty_email=? WHERE course_id=?");
+            $stmt->bind_param("ssi", $faculty_name, $faculty_email, $course_id);
+            $stmt->execute();
+            $stmt->close();
+        } else {
+            pg_query_params($conn, "UPDATE admin_courses SET assigned_faculty_name=$1, assigned_faculty_email=$2 WHERE course_id=$3", [$faculty_name, $faculty_email, $course_id]);
+        }
+    }
+    header("Location: ".$_SERVER['PHP_SELF']); exit;
+}
+
+// Handle Delete Course
+if (isset($_GET['delete'])) {
+    $id = $_GET['delete'];
+    if ($env === 'local') $conn->query("DELETE FROM admin_courses WHERE course_id=$id");
+    else pg_query_params($conn, "DELETE FROM admin_courses WHERE course_id=$1", [$id]);
+    header("Location: ".$_SERVER['PHP_SELF']); exit;
+}
 ?>
 
 

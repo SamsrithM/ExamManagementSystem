@@ -1,7 +1,7 @@
 <?php
 // view_invigilation_duties.php
 
-$host = getenv('DB_HOST') ?: 'localhost';
+$host = getenv('DB_HOST') ?: '127.0.0.1';
 $user = getenv('DB_USER') ?: 'root';
 $pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('ROOM_DB') ?: 'room_allocation';

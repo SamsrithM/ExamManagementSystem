@@ -8,36 +8,36 @@ if (!isset($_SESSION['roll_number'])) {
 $roll_number = $_SESSION['roll_number'];
 $test_id = isset($_GET['test_id']) ? intval($_GET['test_id']) : 0;
 
-if ($test_id <= 0) {
-    die("Invalid exam selected.");
-}
+if ($test_id <= 0) die("Invalid exam selected.");
 
 // --- DB environment variables ---
-$db_type = getenv('DB_TYPE') ?: 'mysql'; // mysql or pgsql
+$env = getenv('RENDER') ? 'render' : 'local';
+$db_type = $env === 'render' ? 'pgsql' : 'mysql';
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
+$db_port = getenv('DB_PORT') ?: ($db_type==='mysql'?'3306':'5432');
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_TEST') ?: 'test_creation';
 
-// --- Initialize variables ---
 $test = null;
 $questions = [];
 
+// --- MySQL Mode ---
 if ($db_type === 'mysql') {
     $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
     if ($conn->connect_error) die("DB connection failed: " . $conn->connect_error);
+    $conn->set_charset("utf8");
 
-    // Get test details
+    // Test details
     $stmt = $conn->prepare("SELECT test_title, duration, branch, test_date FROM tests WHERE test_id=?");
     $stmt->bind_param("i", $test_id);
     $stmt->execute();
     $res = $stmt->get_result();
     $test = $res->fetch_assoc();
     $stmt->close();
-
     if (!$test) die("Exam not found.");
 
-    // Fetch questions (objective)
+    // Questions
     $stmt = $conn->prepare("SELECT id, question_text, options, correct_answer 
                             FROM questions 
                             WHERE test_id=? AND question_type='objective' 
@@ -47,25 +47,27 @@ if ($db_type === 'mysql') {
     $res = $stmt->get_result();
     while ($row = $res->fetch_assoc()) {
         $decoded_options = json_decode($row['options'], true);
-        if (!is_array($decoded_options)) $decoded_options = [$row['options']];
-        $row['options'] = $decoded_options;
+        $row['options'] = is_array($decoded_options) ? $decoded_options : [$row['options']];
         $questions[] = $row;
     }
     $stmt->close();
     $conn->close();
-} elseif ($db_type === 'pgsql') {
-    $conn_string = "host=$db_host dbname=$db_name user=$db_user password=$db_pass";
+}
+
+// --- PostgreSQL Mode ---
+elseif ($db_type === 'pgsql') {
+    $conn_string = "host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass";
     $conn = pg_connect($conn_string);
     if (!$conn) die("PostgreSQL connection failed.");
 
-    // Get test details
+    // Test details
     $res = pg_prepare($conn, "get_test", "SELECT test_title, duration, branch, test_date FROM tests WHERE test_id=$1");
     $res = pg_execute($conn, "get_test", [$test_id]);
     $test = pg_fetch_assoc($res);
     pg_free_result($res);
     if (!$test) die("Exam not found.");
 
-    // Fetch questions (objective)
+    // Questions
     $res = pg_prepare($conn, "get_questions", "SELECT id, question_text, options, correct_answer 
                                                FROM questions 
                                                WHERE test_id=$1 AND question_type='objective' 
@@ -73,8 +75,7 @@ if ($db_type === 'mysql') {
     $res = pg_execute($conn, "get_questions", [$test_id]);
     while ($row = pg_fetch_assoc($res)) {
         $decoded_options = json_decode($row['options'], true);
-        if (!is_array($decoded_options)) $decoded_options = [$row['options']];
-        $row['options'] = $decoded_options;
+        $row['options'] = is_array($decoded_options) ? $decoded_options : [$row['options']];
         $questions[] = $row;
     }
     pg_free_result($res);

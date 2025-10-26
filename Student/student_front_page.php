@@ -13,7 +13,7 @@ $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
 
 // Student DB
-$student_db_name = getenv('STUDENT_DB') ?: 'new_registration_data';
+$student_db_name = getenv('DB_NAME') ?: 'new_registration_data';
 $student_db = new mysqli($db_host, $db_user, $db_pass, $student_db_name);
 if ($student_db->connect_error) die("Student DB connection failed: " . $student_db->connect_error);
 

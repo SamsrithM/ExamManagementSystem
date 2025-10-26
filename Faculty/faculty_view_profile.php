@@ -7,7 +7,7 @@ if (!isset($_SESSION['faculty_user'])) {
 }
 
 // DB connection using environment variables
-$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_host = getenv('DB_HOST') ?: '127.0.0.1';
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name   = getenv('FACULTY_DETAILS_DB') ?: 'new_registration_data';

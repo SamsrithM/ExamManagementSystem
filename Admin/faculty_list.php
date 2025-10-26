@@ -7,27 +7,50 @@ if (!isset($_SESSION['admin_user'])) {
     exit;
 }
 
-// Database connection
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_NAME') ?: 'new_registration_data';
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
+// DB connection
+if ($env === 'local') {
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'new_registration_data';
+
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) {
+        die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
+    }
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_NAME') ?: 'new_registration_data';
+
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h2 style='color:red;'>PostgreSQL Connection failed.</h2>");
 }
 
 // Fetch faculty data
 $faculty = [];
-$result = $conn->query("SELECT faculty_id, first_name, last_name, gender, email, department, designation FROM faculty_new_data ORDER BY first_name ASC");
-if ($result && $result->num_rows > 0) {
+
+if ($env === 'local') {
+    $result = $conn->query("SELECT faculty_id, first_name, last_name, gender, email, department, designation FROM faculty_new_data ORDER BY first_name ASC");
     while ($row = $result->fetch_assoc()) {
         $faculty[] = $row;
     }
+} else {
+    $result = pg_query($conn, "SELECT faculty_id, first_name, last_name, gender, email, department, designation FROM faculty_new_data ORDER BY first_name ASC");
+    while ($row = pg_fetch_assoc($result)) {
+        $faculty[] = $row;
+    }
 }
-$conn->close();
+
+if ($env === 'local') $conn->close();
+else pg_close($conn);
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

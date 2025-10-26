@@ -6,20 +6,25 @@ if (!isset($_SESSION['roll_number'])) {
     exit;
 }
 
-// --- Environment variables ---
-$db_type = getenv('DB_TYPE') ?: 'mysql'; // "mysql" or "pgsql"
+$roll_number = $_SESSION['roll_number'];
+
+// --- Environment detection ---
+$env = getenv('RENDER') ? 'render' : 'local';
+
+// --- Database credentials ---
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
+$db_port = getenv('DB_PORT') ?: ($env === 'local' ? '3306' : '5432');
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_STUDENT_DATA') ?: 'student_data';
 
-$roll_number = $_SESSION['roll_number'];
 $student = null;
 
-// --- MySQL Mode ---
-if ($db_type === 'mysql') {
+// --- Connect to DB and fetch student ---
+if ($env === 'local') {
     $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-    if ($conn->connect_error) die("Connection failed: " . htmlspecialchars($conn->connect_error));
+    if ($conn->connect_error) die("MySQL connection failed: " . htmlspecialchars($conn->connect_error));
+    $conn->set_charset("utf8");
 
     $stmt = $conn->prepare("SELECT student_id, first_name, last_name, gender, dob, batch, department, institute_email, course, semester, photo FROM students_new_data WHERE roll_number = ?");
     $stmt->bind_param("s", $roll_number);
@@ -28,18 +33,15 @@ if ($db_type === 'mysql') {
     if ($result->num_rows === 1) $student = $result->fetch_assoc();
     $stmt->close();
     $conn->close();
-}
-
-// --- PostgreSQL Mode ---
-elseif ($db_type === 'pgsql') {
-    $conn_string = "host=$db_host dbname=$db_name user=$db_user password=$db_pass";
+} else {
+    $conn_string = "host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass";
     $conn = pg_connect($conn_string);
     if (!$conn) die("PostgreSQL connection failed.");
 
-    $result = pg_prepare($conn, "student_query", 'SELECT student_id, first_name, last_name, gender, dob, batch, department, institute_email, course, semester, photo FROM students_new_data WHERE roll_number=$1');
-    $result = pg_execute($conn, "student_query", array($roll_number));
-    if (pg_num_rows($result) === 1) $student = pg_fetch_assoc($result);
-    pg_free_result($result);
+    $res = pg_prepare($conn, "student_query", "SELECT student_id, first_name, last_name, gender, dob, batch, department, institute_email, course, semester, photo FROM students_new_data WHERE roll_number=$1");
+    $res = pg_execute($conn, "student_query", [$roll_number]);
+    if (pg_num_rows($res) === 1) $student = pg_fetch_assoc($res);
+    pg_free_result($res);
     pg_close($conn);
 }
 

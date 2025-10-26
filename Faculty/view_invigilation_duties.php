@@ -8,48 +8,86 @@ if (!isset($_SESSION['faculty_user'])) {
 
 $faculty_email = $_SESSION['faculty_user'];
 
-// Database connection using environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
+// Detect environment
+$is_render = getenv('RENDER') ? true : false;
+
+// DB credentials
+$db_host = getenv('DB_HOST') ?: ($is_render ? 'your_postgres_host' : 'localhost');
+$db_user = getenv('DB_USER') ?: ($is_render ? 'postgres' : 'root');
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_ROOM') ?: 'room_allocation';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Database connection failed: " . $conn->connect_error . "</h2>");
+// Connect to DB
+if ($is_render) {
+    $conn = pg_connect("host=$db_host dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h2 style='color:red;'>PostgreSQL connection failed</h2>");
+} else {
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("<h2 style='color:red;'>MySQL connection failed: " . $conn->connect_error . "</h2>");
 }
 
 // Fetch faculty name
-$stmt_name = $conn->prepare("SELECT faculty_name FROM faculty_assignments WHERE email_id = ? LIMIT 1");
-$stmt_name->bind_param("s", $faculty_email);
-$stmt_name->execute();
-$result_name = $stmt_name->get_result();
 $faculty_name = "Faculty";
-if ($result_name->num_rows > 0) {
-    $row_name = $result_name->fetch_assoc();
-    $faculty_name = htmlspecialchars($row_name['faculty_name']);
+if ($is_render) {
+    $res = pg_prepare($conn, "get_name", "SELECT faculty_name FROM faculty_assignments WHERE email_id=$1 LIMIT 1");
+    $res = pg_execute($conn, "get_name", [$faculty_email]);
+    if (pg_num_rows($res) > 0) {
+        $row = pg_fetch_assoc($res);
+        $faculty_name = htmlspecialchars($row['faculty_name']);
+    }
+} else {
+    $stmt_name = $conn->prepare("SELECT faculty_name FROM faculty_assignments WHERE email_id=? LIMIT 1");
+    $stmt_name->bind_param("s", $faculty_email);
+    $stmt_name->execute();
+    $result_name = $stmt_name->get_result();
+    if ($result_name->num_rows > 0) {
+        $row = $result_name->fetch_assoc();
+        $faculty_name = htmlspecialchars($row['faculty_name']);
+    }
+    $stmt_name->close();
 }
-$stmt_name->close();
 
 // Fetch assigned duties
-$stmt_duties = $conn->prepare("
-    SELECT id, classroom_id, classroom, faculty_name, assigned_at, status 
-    FROM faculty_assignments 
-    WHERE email_id = ? 
-    AND status != 'cancelled'
-");
-$stmt_duties->bind_param("s", $faculty_email);
-$stmt_duties->execute();
-$result_duties = $stmt_duties->get_result();
+$duties = [];
+if ($is_render) {
+    $res = pg_prepare($conn, "get_duties", "
+        SELECT id, classroom_id, classroom, faculty_name, assigned_at, status 
+        FROM faculty_assignments 
+        WHERE email_id=$1 AND status != 'cancelled'
+    ");
+    $res = pg_execute($conn, "get_duties", [$faculty_email]);
+    while ($row = pg_fetch_assoc($res)) $duties[] = $row;
+} else {
+    $stmt_duties = $conn->prepare("
+        SELECT id, classroom_id, classroom, faculty_name, assigned_at, status 
+        FROM faculty_assignments 
+        WHERE email_id=? AND status != 'cancelled'
+    ");
+    $stmt_duties->bind_param("s", $faculty_email);
+    $stmt_duties->execute();
+    $result_duties = $stmt_duties->get_result();
+    while ($row = $result_duties->fetch_assoc()) $duties[] = $row;
+    $stmt_duties->close();
+}
 
 // Fetch total hours done
-$stmt_hours = $conn->prepare("SELECT SUM(hours_of_duty_done) as total_hours FROM faculty_duty_done WHERE email_id = ?");
-$stmt_hours->bind_param("s", $faculty_email);
-$stmt_hours->execute();
-$res_hours = $stmt_hours->get_result();
-$row_hours = $res_hours->fetch_assoc();
-$total_hours = $row_hours['total_hours'] ?? 0;
-$stmt_hours->close();
+$total_hours = 0;
+if ($is_render) {
+    $res = pg_prepare($conn, "get_hours", "SELECT SUM(hours_of_duty_done) as total_hours FROM faculty_duty_done WHERE email_id=$1");
+    $res = pg_execute($conn, "get_hours", [$faculty_email]);
+    $row = pg_fetch_assoc($res);
+    $total_hours = $row['total_hours'] ?? 0;
+} else {
+    $stmt_hours = $conn->prepare("SELECT SUM(hours_of_duty_done) as total_hours FROM faculty_duty_done WHERE email_id=?");
+    $stmt_hours->bind_param("s", $faculty_email);
+    $stmt_hours->execute();
+    $res_hours = $stmt_hours->get_result();
+    $row = $res_hours->fetch_assoc();
+    $total_hours = $row['total_hours'] ?? 0;
+    $stmt_hours->close();
+}
+
+if (!$is_render) $conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">

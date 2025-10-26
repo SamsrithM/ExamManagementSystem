@@ -1,27 +1,37 @@
 <?php
 session_start();
 
-// Ensure admin is logged in (adjust session variable as needed)
+// Ensure admin is logged in
 if (!isset($_SESSION['admin_user'])) {
     header("Location: admin_login.php");
     exit;
 }
 
-// Use environment variables for deployment
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$user = getenv('DB_USER') ?: 'root';
-$pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_ROOM') ?: 'room_allocation';
+$env = getenv('RENDER') ? 'render' : 'local';
 
-// Create database connection
-$conn = new mysqli($host, $user, $pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red; text-align:center;'>Database connection failed.</h2>");
+// Database connection
+if ($env === 'local') {
+    $conn = new mysqli('localhost', 'root', '', 'room_allocation');
+    if ($conn->connect_error) die("<h2 style='color:red; text-align:center;'>MySQL connection failed: " . $conn->connect_error . "</h2>");
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_ROOM') ?: 'room_allocation';
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h2 style='color:red; text-align:center;'>PostgreSQL connection failed</h2>");
 }
 
 // Fetch all classrooms
-$sql = "SELECT * FROM generated_classrooms ORDER BY id ASC";
-$result = $conn->query($sql);
+$all_classrooms = [];
+if ($env === 'local') {
+    $res = $conn->query("SELECT * FROM generated_classrooms ORDER BY id ASC");
+    while ($row = $res->fetch_assoc()) $all_classrooms[] = $row;
+} else {
+    $res = pg_query($conn, "SELECT * FROM generated_classrooms ORDER BY id ASC");
+    while ($row = pg_fetch_assoc($res)) $all_classrooms[] = $row;
+}
 ?>
 
 <!DOCTYPE html>

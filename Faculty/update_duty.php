@@ -21,7 +21,7 @@ if ($duty_id <= 0) {
 $faculty_email = $_SESSION['faculty_user'];
 
 // --- DB Connection ---
-$db_host = getenv('DB_HOST') ?: '127.0.0.1';
+$db_host = getenv('DB_HOST') ?: 'mysql';
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_ROOM') ?: 'room_allocation';

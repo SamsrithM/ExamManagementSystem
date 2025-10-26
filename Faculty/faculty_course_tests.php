@@ -11,7 +11,7 @@ $course_code = $_GET['course_code'] ?? '';
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_NAME') ?: 'room_allocation';
+$db_name = getenv('DB_ROOM') ?: 'room_allocation';
 
 if (empty($course_code)) {
     echo "<p style='color:red;'>Invalid course selected.</p>";

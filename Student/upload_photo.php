@@ -1,6 +1,5 @@
 <?php
 session_start();
-
 if (!isset($_SESSION['roll_number'])) {
     header("Location: student_login.php");
     exit;
@@ -9,8 +8,10 @@ if (!isset($_SESSION['roll_number'])) {
 $roll_number = $_SESSION['roll_number'];
 
 // --- DB environment variables ---
-$db_type = getenv('DB_TYPE') ?: 'mysql'; // mysql or pgsql
+$env = getenv('RENDER') ? 'render' : 'local';
+$db_type = $env === 'render' ? 'pgsql' : 'mysql';
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
+$db_port = getenv('DB_PORT') ?: ($db_type==='mysql'?'3306':'5432');
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_NAME') ?: 'new_registration_data';
@@ -36,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
                 if ($db_type === 'mysql') {
                     $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
                     if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
+                    $conn->set_charset("utf8");
 
                     $stmt = $conn->prepare("UPDATE students_new_data SET photo=? WHERE roll_number=?");
                     $stmt->bind_param("ss", $new_file_name, $roll_number);
@@ -44,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
                     $conn->close();
 
                 } elseif ($db_type === 'pgsql') {
-                    $conn_string = "host=$db_host dbname=$db_name user=$db_user password=$db_pass";
+                    $conn_string = "host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass";
                     $conn = pg_connect($conn_string);
                     if (!$conn) die("PostgreSQL connection failed.");
 
@@ -53,20 +55,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
                     pg_close($conn);
                 }
 
-                // Redirect back to profile page to show updated photo
                 header("Location: student_view_profile.php");
                 exit;
 
-            } else {
-                die("Failed to move uploaded file.");
-            }
+            } else die("Failed to move uploaded file.");
 
-        } else {
-            die("Invalid file type. Only JPG, JPEG, PNG, GIF allowed.");
-        }
+        } else die("Invalid file type. Only JPG, JPEG, PNG, GIF allowed.");
 
-    } else {
-        die("Error uploading file.");
-    }
+    } else die("Error uploading file.");
 }
 ?>

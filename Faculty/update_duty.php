@@ -21,9 +21,14 @@ if ($duty_id <= 0) {
 $faculty_email = $_SESSION['faculty_user'];
 
 // --- DB Connection ---
-$conn = new mysqli("localhost", "root", "", "room_allocation");
+$db_host = getenv('DB_HOST') ?: '127.0.0.1';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_ROOM') ?: 'room_allocation';
+
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 if ($conn->connect_error) {
-    echo json_encode(['success'=>false, 'message'=>'DB connection failed']);
+    echo json_encode(['success' => false, 'message' => 'DB connection failed']);
     exit;
 }
 

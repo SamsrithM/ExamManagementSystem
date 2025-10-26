@@ -11,7 +11,7 @@ $reset_email = $_SESSION['reset_email'];
 $user_type   = $_SESSION['user_type']; // 'student' or 'faculty'
 
 // Use environment variables for deployment
-$host = getenv('DB_HOST') ?: 'localhost';
+$host = getenv('DB_HOST') ?: '127.0.0.1';
 $user = getenv('DB_USER') ?: 'root';
 $pass = getenv('DB_PASS') ?: '';
 $db_student = getenv('STUDENT_DB') ?: 'student_registration_data';

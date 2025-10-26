@@ -1,6 +1,5 @@
 <?php
 session_start();
-
 if (!isset($_SESSION['roll_number'])) {
     header("Location: student_login.php");
     exit;
@@ -8,34 +7,58 @@ if (!isset($_SESSION['roll_number'])) {
 
 $roll_number = $_SESSION['roll_number'];
 
-// --- DB connection using environment variables ---
+// --- DB environment variables ---
+$env = getenv('RENDER') ? 'render' : 'local';
+$db_type = $env === 'render' ? 'pgsql' : 'mysql';
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
+$db_port = getenv('DB_PORT') ?: ($db_type==='mysql'?'3306':'5432');
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_TEST') ?: 'test_creation';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("Database connection failed: " . $conn->connect_error);
+$results = [];
+
+// --- MySQL Mode ---
+if ($db_type === 'mysql') {
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("DB connection failed: " . $conn->connect_error);
+    $conn->set_charset("utf8");
+
+    $stmt = $conn->prepare("
+        SELECT m.test_id, m.marks_obtained, m.total_marks, m.submitted_at,
+               t.test_title, t.test_date
+        FROM marks_awarded m
+        JOIN tests t ON m.test_id = t.test_id
+        WHERE m.roll_number=?
+        ORDER BY m.submitted_at DESC
+    ");
+    $stmt->bind_param("s", $roll_number);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $results[] = $row;
+    $stmt->close();
+    $conn->close();
 }
 
-// Fetch all results for the logged-in student
-$stmt = $conn->prepare("
-    SELECT m.test_id, m.marks_obtained, m.total_marks, m.submitted_at, t.test_title, t.test_date
-    FROM marks_awarded m
-    JOIN tests t ON m.test_id = t.test_id
-    WHERE m.roll_number=?
-    ORDER BY m.submitted_at DESC
-");
-$stmt->bind_param("s", $roll_number);
-$stmt->execute();
-$result = $stmt->get_result();
-$results = [];
-while ($row = $result->fetch_assoc()) {
-    $results[] = $row;
+// --- PostgreSQL Mode ---
+elseif ($db_type === 'pgsql') {
+    $conn_string = "host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass";
+    $conn = pg_connect($conn_string);
+    if (!$conn) die("PostgreSQL connection failed.");
+
+    $res = pg_prepare($conn, "get_results", "
+        SELECT m.test_id, m.marks_obtained, m.total_marks, m.submitted_at,
+               t.test_title, t.test_date
+        FROM marks_awarded m
+        JOIN tests t ON m.test_id = t.test_id
+        WHERE m.roll_number=$1
+        ORDER BY m.submitted_at DESC
+    ");
+    $res = pg_execute($conn, "get_results", [$roll_number]);
+    while ($row = pg_fetch_assoc($res)) $results[] = $row;
+    pg_free_result($res);
+    pg_close($conn);
 }
-$stmt->close();
-$conn->close();
 ?>
 
 <!DOCTYPE html>

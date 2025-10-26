@@ -11,7 +11,7 @@ if (!isset($_SESSION['admin_user'])) {
 $host = getenv('DB_HOST') ?: '127.0.0.1';
 $user = getenv('DB_USER') ?: 'root';
 $pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('ROOM_DB') ?: 'room_allocation';
+$db_name = getenv('DB_ROOM') ?: 'room_allocation';
 
 // Create database connection
 $conn = new mysqli($host, $user, $pass, $db_name);

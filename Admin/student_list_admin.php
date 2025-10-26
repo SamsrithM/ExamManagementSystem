@@ -7,15 +7,29 @@ if (!isset($_SESSION['admin_user'])) {
     exit;
 }
 
-// Database connection using environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_NAME') ?: 'new_registration_data';
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
+// DB connection
+if ($env === 'local') {
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'new_registration_data';
+
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) {
+        die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
+    }
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_NAME') ?: 'new_registration_data';
+
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h2 style='color:red;'>PostgreSQL Connection failed.</h2>");
 }
 
 // Programs, Departments and Batches
@@ -34,23 +48,38 @@ $selected_batch = $_GET['batch'] ?? '';
 // Fetch students if all filters are selected
 $students = [];
 if ($selected_program && $selected_department && $selected_batch) {
-    $stmt = $conn->prepare("
-        SELECT student_id, first_name, last_name, gender, dob, batch, department, roll_number, institute_email, course, semester
-        FROM students_new_data 
-        WHERE course = ? AND department = ? AND batch = ? 
-        ORDER BY roll_number ASC
-    ");
-    $stmt->bind_param("ssi", $selected_program, $selected_department, $selected_batch);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $students[] = $row;
-    }
-    $stmt->close();
-}
-$conn->close();
-?>
+    if ($env === 'local') {
+        $stmt = $conn->prepare("
+            SELECT student_id, first_name, last_name, gender, dob, batch, department, roll_number, institute_email, course, semester
+            FROM students_new_data 
+            WHERE course = ? AND department = ? AND batch = ? 
+            ORDER BY roll_number ASC
+        ");
+        $stmt->bind_param("ssi", $selected_program, $selected_department, $selected_batch);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $students[] = $row;
+        }
+        $stmt->close();
+    } else {
+        $result = pg_query_params($conn, "
+            SELECT student_id, first_name, last_name, gender, dob, batch, department, roll_number, institute_email, course, semester
+            FROM students_new_data 
+            WHERE course = $1 AND department = $2 AND batch = $3 
+            ORDER BY roll_number ASC
+        ", [$selected_program, $selected_department, $selected_batch]);
 
+        while ($row = pg_fetch_assoc($result)) {
+            $students[] = $row;
+        }
+    }
+}
+
+// Close connection
+if ($env === 'local') $conn->close();
+else pg_close($conn);
+?>
 <!DOCTYPE html>
 <html lang="en">
 

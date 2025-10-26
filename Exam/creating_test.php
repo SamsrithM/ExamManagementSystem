@@ -1,36 +1,75 @@
 <?php
-session_start(); // ✅ Needed to access logged-in faculty info
+session_start();
 
-// Redirect if faculty not logged in
-if (!isset($_SESSION['faculty_user'])) {
-    header("Location: ../Faculty/faculty_login.php");
+// Check faculty login
+if(!isset($_SESSION['faculty_user'])){
+    echo json_encode(['status'=>'error','message'=>'Faculty not logged in']);
     exit;
 }
 
-// Database connection using environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_TEST') ?: 'test_creation';
+// POST request JSON
+$data = json_decode(file_get_contents('php://input'), true);
+$test_id = $data['test_id'] ?? 0;
+$questions = $data['questions'] ?? [];
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Database connection failed: ".$conn->connect_error."</h2>");
+if(!$test_id || empty($questions)){
+    echo json_encode(['status'=>'error','message'=>'Test ID or questions missing']);
+    exit;
 }
 
-// Fetch all tests created by this faculty
-$faculty_email = $conn->real_escape_string($_SESSION['faculty_user']);
-$tests = [];
-$result = $conn->query("SELECT * FROM tests WHERE created_by='$faculty_email' ORDER BY test_date DESC");
-if ($result && $result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $tests[] = $row;
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
+
+if($env==='local'){
+    $conn = new mysqli('localhost','root','','test_creation');
+    if($conn->connect_error){
+        echo json_encode(['status'=>'error','message'=>'DB connection failed']); exit;
+    }
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_TEST') ?: 'test_creation';
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if(!$conn){
+        echo json_encode(['status'=>'error','message'=>'PostgreSQL connection failed']); exit;
     }
 }
 
-$conn->close();
-?>
+$faculty_email = $_SESSION['faculty_user'];
+$success = true;
+$error_msg = '';
 
+foreach($questions as $q){
+    $question = $q['question'];
+    $options = $q['options']; // array of 4
+    $answer  = $q['answer'];
+    $type    = $q['type'] ?? 'objective';
+
+    if($env==='local'){
+        $stmt = $conn->prepare("INSERT INTO questions (test_id, question_text, option_a, option_b, option_c, option_d, correct_answer, type, created_by) VALUES (?,?,?,?,?,?,?,?,?)");
+        $stmt->bind_param("issssssis",$test_id,$question,$options[0],$options[1],$options[2],$options[3],$answer,$type,$faculty_email);
+        if(!$stmt->execute()){
+            $success=false; $error_msg=$stmt->error; break;
+        }
+        $stmt->close();
+    } else {
+        $res = pg_query_params($conn, "INSERT INTO questions (test_id, question_text, option_a, option_b, option_c, option_d, correct_answer, type, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+            [$test_id,$question,$options[0],$options[1],$options[2],$options[3],$answer,$type,$faculty_email]);
+        if(!$res){ $success=false; $error_msg='Insert failed'; break; }
+    }
+}
+
+if($env==='local') $conn->close();
+else pg_close($conn);
+
+if($success){
+    echo json_encode(['status'=>'success']);
+}else{
+    echo json_encode(['status'=>'error','message'=>$error_msg]);
+}
+?>
 
 <!DOCTYPE html>
 <html lang="en">

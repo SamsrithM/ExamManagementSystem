@@ -24,9 +24,12 @@ if ($test_id <= 0) {
     exit;
 }
 
-// --- Environment variables ---
-$db_type = getenv('DB_TYPE') ?: 'mysql'; // "mysql" or "pgsql"
+// --- Environment detection ---
+$env = getenv('RENDER') ? 'render' : 'local';
+
+// --- Database credentials ---
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
+$db_port = getenv('DB_PORT') ?: ($env === 'local' ? '3306' : '5432');
 $db_user = getenv('DB_USER') ?: 'root';
 $db_pass = getenv('DB_PASS') ?: '';
 $db_name = getenv('DB_TEST') ?: 'test_creation';
@@ -35,12 +38,13 @@ $total_marks = 0;
 $marks_obtained = 0;
 $questions = [];
 
-// --- MySQL mode ---
-if ($db_type === 'mysql') {
+// --- MySQL Mode ---
+if ($env === 'local') {
     $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
     if ($conn->connect_error) die("<h2 style='text-align:center;color:red;margin-top:50px;'>DB connection failed: ".$conn->connect_error."</h2>");
+    $conn->set_charset("utf8");
 
-    // Create marks_awarded table if not exists
+    // Create table if not exists
     $conn->query("
     CREATE TABLE IF NOT EXISTS marks_awarded (
         roll_number VARCHAR(50),
@@ -55,8 +59,8 @@ if ($db_type === 'mysql') {
     $stmt = $conn->prepare("SELECT id, question_type, correct_answer FROM questions WHERE test_id=?");
     $stmt->bind_param("i", $test_id);
     $stmt->execute();
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
         $questions[$row['id']] = $row;
         if ($row['question_type'] === 'objective') $total_marks++;
     }
@@ -84,9 +88,9 @@ if ($db_type === 'mysql') {
     $conn->close();
 }
 
-// --- PostgreSQL mode ---
-elseif ($db_type === 'pgsql') {
-    $conn_string = "host=$db_host dbname=$db_name user=$db_user password=$db_pass";
+// --- PostgreSQL Mode ---
+else {
+    $conn_string = "host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass";
     $conn = pg_connect($conn_string);
     if (!$conn) die("<h2 style='text-align:center;color:red;margin-top:50px;'>PostgreSQL connection failed.</h2>");
 
@@ -97,7 +101,7 @@ elseif ($db_type === 'pgsql') {
         test_id INT,
         marks_obtained INT,
         total_marks INT,
-        PRIMARY KEY(roll_number, test_id)
+        PRIMARY KEY (roll_number, test_id)
     );
     ");
 
@@ -131,7 +135,6 @@ elseif ($db_type === 'pgsql') {
     pg_close($conn);
 }
 ?>
-
 
 <!DOCTYPE html>
 <html>

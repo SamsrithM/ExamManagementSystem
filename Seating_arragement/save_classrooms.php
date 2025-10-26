@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 // Database connection using environment variables
-$servername = getenv('DB_HOST') ?: 'localhost';
+$servername = getenv('DB_HOST') ?: '127.0.0.1';
 $username   = getenv('DB_USER') ?: 'root';
 $password   = getenv('DB_PASS') ?: '';
 $dbname     = getenv('ROOM_DB') ?: 'room_allocation';

@@ -1,29 +1,42 @@
 <?php
 session_start();
 if (!isset($_SESSION['faculty_user'])) {
-    header("Location: faculty_login.php"); // redirect to login
+    header("Location: faculty_login.php");
     exit;
 }
 
 $faculty_email = $_SESSION['faculty_user'];
 
-// Database connection using environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_ROOM') ?: 'room_allocation';
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
+// Database connection
+if ($env === 'local') {
+    $conn = new mysqli('localhost', 'root', '', 'room_allocation');
+    if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_ROOM') ?: 'room_allocation';
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("PostgreSQL connection failed");
+}
 
 $message = "";
 
-// Get faculty number_of_duties using prepared statement
-$stmt = $conn->prepare("SELECT number_of_duties FROM faculty_duty_done WHERE email_id=?");
-$stmt->bind_param("s", $faculty_email);
-$stmt->execute();
-$faculty = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+// Get faculty number_of_duties
+if ($env === 'local') {
+    $stmt = $conn->prepare("SELECT number_of_duties FROM faculty_duty_done WHERE email_id=?");
+    $stmt->bind_param("s", $faculty_email);
+    $stmt->execute();
+    $faculty = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+} else {
+    $res = pg_query_params($conn, "SELECT number_of_duties FROM faculty_duty_done WHERE email_id=$1", [$faculty_email]);
+    $faculty = pg_fetch_assoc($res);
+}
 $min_duties = $faculty['number_of_duties'] ?? 0;
 
 // Handle form submission
@@ -34,60 +47,75 @@ if (isset($_POST['submit_slots'])) {
         $message = "❌ You must select at least $min_duties slots.";
     } else {
         foreach ($selected_slots as $slot_id) {
-            // Check if slot already full
-            $stmt = $conn->prepare("SELECT max_capacity, slot_date, slot_time FROM free_slots WHERE id=?");
-            $stmt->bind_param("i", $slot_id);
-            $stmt->execute();
-            $slot = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
+            // Fetch slot info
+            if ($env === 'local') {
+                $stmt = $conn->prepare("SELECT max_capacity, slot_date, slot_time FROM free_slots WHERE id=?");
+                $stmt->bind_param("i", $slot_id);
+                $stmt->execute();
+                $slot = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
 
-            $stmt = $conn->prepare("SELECT COUNT(*) AS count FROM faculty_slot_selection WHERE slot_id=?");
-            $stmt->bind_param("i", $slot_id);
-            $stmt->execute();
-            $taken = $stmt->get_result()->fetch_assoc()['count'];
-            $stmt->close();
+                $stmt = $conn->prepare("SELECT COUNT(*) AS count FROM faculty_slot_selection WHERE slot_id=?");
+                $stmt->bind_param("i", $slot_id);
+                $stmt->execute();
+                $taken = $stmt->get_result()->fetch_assoc()['count'];
+                $stmt->close();
+
+                $stmt = $conn->prepare("SELECT 1 FROM faculty_slot_selection WHERE faculty_email=? AND slot_id=?");
+                $stmt->bind_param("si", $faculty_email, $slot_id);
+                $stmt->execute();
+                $exists = $stmt->get_result();
+                $stmt->close();
+            } else {
+                $slot = pg_fetch_assoc(pg_query_params($conn, "SELECT max_capacity, slot_date, slot_time FROM free_slots WHERE id=$1", [$slot_id]));
+                $taken = pg_fetch_assoc(pg_query_params($conn, "SELECT COUNT(*) AS count FROM faculty_slot_selection WHERE slot_id=$1", [$slot_id]))['count'];
+                $exists = pg_query_params($conn, "SELECT 1 FROM faculty_slot_selection WHERE faculty_email=$1 AND slot_id=$2", [$faculty_email, $slot_id]);
+            }
 
             if ($taken >= $slot['max_capacity']) {
                 $message .= "⚠️ Slot ID $slot_id is already full!<br>";
                 continue;
             }
 
-            // Prevent duplicate selection
-            $stmt = $conn->prepare("SELECT 1 FROM faculty_slot_selection WHERE faculty_email=? AND slot_id=?");
-            $stmt->bind_param("si", $faculty_email, $slot_id);
-            $stmt->execute();
-            $exists = $stmt->get_result();
-            $stmt->close();
-            if ($exists->num_rows > 0) continue;
+            if (($env === 'local' && $exists->num_rows > 0) || ($env === 'render' && pg_num_rows($exists) > 0)) {
+                continue; // skip duplicates
+            }
 
-            // Insert slot selection
-            $stmt = $conn->prepare("
-                INSERT INTO faculty_slot_selection 
-                (faculty_email, slot_id, slot_date, slot_time, selected_at) 
-                VALUES (?, ?, ?, ?, NOW())
-            ");
-            $stmt->bind_param("siss", $faculty_email, $slot_id, $slot['slot_date'], $slot['slot_time']);
-            $stmt->execute();
-            $stmt->close();
+            // Insert selection
+            if ($env === 'local') {
+                $stmt = $conn->prepare("INSERT INTO faculty_slot_selection (faculty_email, slot_id, slot_date, slot_time, selected_at) VALUES (?, ?, ?, ?, NOW())");
+                $stmt->bind_param("siss", $faculty_email, $slot_id, $slot['slot_date'], $slot['slot_time']);
+                $stmt->execute();
+                $stmt->close();
+            } else {
+                pg_query_params($conn, "INSERT INTO faculty_slot_selection (faculty_email, slot_id, slot_date, slot_time, selected_at) VALUES ($1,$2,$3,$4,NOW())",
+                    [$faculty_email, $slot_id, $slot['slot_date'], $slot['slot_time']]);
+            }
         }
-
-        if ($message == "") $message = "✅ Slots selected successfully!";
+        if ($message === "") $message = "✅ Slots selected successfully!";
     }
 }
 
-// Fetch all available slots
-$slots = $conn->query("SELECT * FROM free_slots ORDER BY slot_date ASC");
-
-// Fetch already selected slots for this faculty
-$selected_slots = [];
-$stmt = $conn->prepare("SELECT slot_id FROM faculty_slot_selection WHERE faculty_email=?");
-$stmt->bind_param("s", $faculty_email);
-$stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $selected_slots[] = $row['slot_id'];
+// Fetch all slots
+if ($env === 'local') {
+    $slots = $conn->query("SELECT * FROM free_slots ORDER BY slot_date ASC");
+} else {
+    $slots = pg_query($conn, "SELECT * FROM free_slots ORDER BY slot_date ASC");
 }
-$stmt->close();
+
+// Fetch selected slots
+$selected_slots = [];
+if ($env === 'local') {
+    $stmt = $conn->prepare("SELECT slot_id FROM faculty_slot_selection WHERE faculty_email=?");
+    $stmt->bind_param("s", $faculty_email);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $selected_slots[] = $row['slot_id'];
+    $stmt->close();
+} else {
+    $res = pg_query_params($conn, "SELECT slot_id FROM faculty_slot_selection WHERE faculty_email=$1", [$faculty_email]);
+    while ($row = pg_fetch_assoc($res)) $selected_slots[] = $row['slot_id'];
+}
 ?>
 
 <!DOCTYPE html>

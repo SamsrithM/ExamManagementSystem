@@ -1,74 +1,135 @@
 <?php
 session_start();
-
-// Render-ready environment DB connection
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_ROOM') ?: 'room_allocation';
-
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
-}
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 $message = "";
 
-// Handle form submission for adding new record
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['allocate'])) {
-    $name = trim($_POST['name']);
-    $email = trim($_POST['email']);
-    $hours = trim($_POST['hours']);
-    $num_duties = trim($_POST['num_duties']);
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
+$faculty_duties = [];
 
-    if ($name === "" || $email === "" || $hours === "" || $num_duties === "") {
-        $message = "<p style='color:red;'>All fields are required.</p>";
-    } else {
-        // Check if faculty already exists
-        $check = $conn->prepare("SELECT * FROM faculty_duty_done WHERE email_id = ?");
-        $check->bind_param("s", $email);
-        $check->execute();
-        $result = $check->get_result();
+// Connect to DB
+if ($env === 'local') {
+    // MySQL connection (XAMPP)
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'room_allocation';
 
-        if ($result->num_rows > 0) {
-            $message = "<p style='color:red; font-weight:bold;'>❌ Record already exists for $name ($email). Number of duties can be modified below.</p>";
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
+
+    // Handle form submission for adding new record
+    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['allocate'])) {
+        $name = trim($_POST['name']);
+        $email = trim($_POST['email']);
+        $hours = trim($_POST['hours']);
+        $num_duties = trim($_POST['num_duties']);
+
+        if ($name === "" || $email === "" || $hours === "" || $num_duties === "") {
+            $message = "<p style='color:red;'>All fields are required.</p>";
         } else {
-            // Insert new record
-            $insert = $conn->prepare("INSERT INTO faculty_duty_done (name, email_id, hours_of_duty_done, number_of_duties) VALUES (?, ?, ?, ?)");
-            $insert->bind_param("ssii", $name, $email, $hours, $num_duties);
-            if ($insert->execute()) {
-                $message = "<p style='color:green; font-weight:bold;'>✅ Duty allocated successfully for $name.</p>";
+            $check = $conn->prepare("SELECT * FROM faculty_duty_done WHERE email_id = ?");
+            $check->bind_param("s", $email);
+            $check->execute();
+            $result = $check->get_result();
+
+            if ($result->num_rows > 0) {
+                $message = "<p style='color:red; font-weight:bold;'>❌ Record already exists for $name ($email). Number of duties can be modified below.</p>";
             } else {
-                $message = "<p style='color:red;'>Error adding record: " . $conn->error . "</p>";
+                $insert = $conn->prepare("INSERT INTO faculty_duty_done (name, email_id, hours_of_duty_done, number_of_duties) VALUES (?, ?, ?, ?)");
+                $insert->bind_param("ssii", $name, $email, $hours, $num_duties);
+                if ($insert->execute()) {
+                    $message = "<p style='color:green; font-weight:bold;'>✅ Duty allocated successfully for $name.</p>";
+                } else {
+                    $message = "<p style='color:red;'>Error adding record: " . $conn->error . "</p>";
+                }
+                $insert->close();
             }
-            $insert->close();
+            $check->close();
         }
-
-        $check->close();
     }
-}
 
-// Handle update for number of duties
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['update_duties'])) {
-    $update_id = $_POST['update_id']; // email_id
-    $new_duties = $_POST['new_duties'];
+    // Handle update for number of duties
+    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['update_duties'])) {
+        $update_id = $_POST['update_id']; // email_id
+        $new_duties = $_POST['new_duties'];
 
-    if ($new_duties === "") {
-        $message = "<p style='color:red;'>Enter a valid number of duties.</p>";
-    } else {
-        $stmt = $conn->prepare("UPDATE faculty_duty_done SET number_of_duties = ? WHERE email_id = ?");
-        $stmt->bind_param("is", $new_duties, $update_id);
-        if ($stmt->execute()) {
-            $message = "<p style='color:green; font-weight:bold;'>✅ Number of duties updated successfully.</p>";
+        if ($new_duties === "") {
+            $message = "<p style='color:red;'>Enter a valid number of duties.</p>";
         } else {
-            $message = "<p style='color:red;'>Error updating record: " . $conn->error . "</p>";
+            $stmt = $conn->prepare("UPDATE faculty_duty_done SET number_of_duties = ? WHERE email_id = ?");
+            $stmt->bind_param("is", $new_duties, $update_id);
+            if ($stmt->execute()) {
+                $message = "<p style='color:green; font-weight:bold;'>✅ Number of duties updated successfully.</p>";
+            } else {
+                $message = "<p style='color:red;'>Error updating record: " . $conn->error . "</p>";
+            }
+            $stmt->close();
         }
-        $stmt->close();
+    }
+
+    // Fetch all faculty duties
+    $duties_result = $conn->query("SELECT * FROM faculty_duty_done ORDER BY name ASC");
+    if ($duties_result->num_rows > 0) {
+        while ($row = $duties_result->fetch_assoc()) {
+            $faculty_duties[] = $row;
+        }
+    }
+
+} else {
+    // PostgreSQL connection (Render)
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_ROOM');
+
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h2 style='color:red;'>PostgreSQL Connection failed.</h2>");
+
+    // Handle add/update submissions
+    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['allocate'])) {
+        $name = trim($_POST['name']);
+        $email = trim($_POST['email']);
+        $hours = trim($_POST['hours']);
+        $num_duties = trim($_POST['num_duties']);
+
+        if ($name === "" || $email === "" || $hours === "" || $num_duties === "") {
+            $message = "<p style='color:red;'>All fields are required.</p>";
+        } else {
+            $check = pg_query_params($conn, "SELECT * FROM faculty_duty_done WHERE email_id=$1", [$email]);
+            if (pg_num_rows($check) > 0) {
+                $message = "<p style='color:red; font-weight:bold;'>❌ Record already exists for $name ($email). Number of duties can be modified below.</p>";
+            } else {
+                $insert = pg_query_params($conn, "INSERT INTO faculty_duty_done (name, email_id, hours_of_duty_done, number_of_duties) VALUES ($1,$2,$3,$4)", [$name,$email,$hours,$num_duties]);
+                if ($insert) $message = "<p style='color:green; font-weight:bold;'>✅ Duty allocated successfully for $name.</p>";
+                else $message = "<p style='color:red;'>Error adding record.</p>";
+            }
+        }
+    }
+
+    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['update_duties'])) {
+        $update_id = $_POST['update_id'];
+        $new_duties = $_POST['new_duties'];
+
+        if ($new_duties === "") {
+            $message = "<p style='color:red;'>Enter a valid number of duties.</p>";
+        } else {
+            $update = pg_query_params($conn, "UPDATE faculty_duty_done SET number_of_duties=$1 WHERE email_id=$2", [$new_duties,$update_id]);
+            if ($update) $message = "<p style='color:green; font-weight:bold;'>✅ Number of duties updated successfully.</p>";
+            else $message = "<p style='color:red;'>Error updating record.</p>";
+        }
+    }
+
+    // Fetch all faculty duties
+    $duties_result = pg_query($conn, "SELECT * FROM faculty_duty_done ORDER BY name ASC");
+    while ($row = pg_fetch_assoc($duties_result)) {
+        $faculty_duties[] = $row;
     }
 }
-
-// Fetch all faculty duties
-$duties = $conn->query("SELECT * FROM faculty_duty_done ORDER BY name ASC");
 ?>
 
 <!DOCTYPE html>

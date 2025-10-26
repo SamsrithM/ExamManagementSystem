@@ -6,38 +6,49 @@ if (!isset($_SESSION['roll_number'])) {
     exit;
 }
 
-// --- DB connection settings via environment variables ---
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$user = getenv('DB_USER') ?: 'root';
-$pass = getenv('DB_PASS') ?: '';
-$db   = getenv('DB_NAME') ?: 'new_registration_data';
-
-$conn = new mysqli($host, $user, $pass, $db);
-if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
+// --- Environment variables ---
+$db_type = getenv('DB_TYPE') ?: 'mysql'; // "mysql" or "pgsql"
+$db_host = getenv('DB_HOST') ?: '127.0.0.1';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS') ?: '';
+$db_name = getenv('DB_STUDENT_DATA') ?: 'student_data';
 
 $roll_number = $_SESSION['roll_number'];
+$student = null;
 
-// Fetch student data including photo
-$stmt = $conn->prepare("SELECT student_id, first_name, last_name, gender, dob, batch, department, institute_email, course, semester, photo FROM students_new_data WHERE roll_number = ?");
-$stmt->bind_param("s", $roll_number);
-$stmt->execute();
-$result = $stmt->get_result();
+// --- MySQL Mode ---
+if ($db_type === 'mysql') {
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("Connection failed: " . htmlspecialchars($conn->connect_error));
 
-if ($result->num_rows === 1) {
-    $student = $result->fetch_assoc();
-} else {
-    die("Student data not found.");
+    $stmt = $conn->prepare("SELECT student_id, first_name, last_name, gender, dob, batch, department, institute_email, course, semester, photo FROM students_new_data WHERE roll_number = ?");
+    $stmt->bind_param("s", $roll_number);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows === 1) $student = $result->fetch_assoc();
+    $stmt->close();
+    $conn->close();
 }
 
-$conn->close();
+// --- PostgreSQL Mode ---
+elseif ($db_type === 'pgsql') {
+    $conn_string = "host=$db_host dbname=$db_name user=$db_user password=$db_pass";
+    $conn = pg_connect($conn_string);
+    if (!$conn) die("PostgreSQL connection failed.");
 
-// Determine which photo to display
+    $result = pg_prepare($conn, "student_query", 'SELECT student_id, first_name, last_name, gender, dob, batch, department, institute_email, course, semester, photo FROM students_new_data WHERE roll_number=$1');
+    $result = pg_execute($conn, "student_query", array($roll_number));
+    if (pg_num_rows($result) === 1) $student = pg_fetch_assoc($result);
+    pg_free_result($result);
+    pg_close($conn);
+}
+
+if (!$student) die("Student data not found.");
+
+// --- Determine photo ---
 $defaultPhoto = "https://imgs.search.brave.com/pkPyTQFTOVFQw7Hki6hg6cgY5FPZ3UzkpUMsnfiuznQ/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/dmVjdG9yc3RvY2su/Y29tL2kvNTAwcC80/MS85MC9hdmF0YXIt/ZGVmYXVsdC11c2Vy/LXByb2ZpbGUtaWNv/bi1zaW1wbGUtZmxh/dC12ZWN0b3ItNTcy/MzQxOTAuanBn";
-$photoFile = !empty($student['photo']) && file_exists('uploads/'.$student['photo']) 
-             ? 'uploads/'.$student['photo'] 
-             : $defaultPhoto;
+$photoFile = !empty($student['photo']) && file_exists('uploads/'.$student['photo']) ? 'uploads/'.$student['photo'] : $defaultPhoto;
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 

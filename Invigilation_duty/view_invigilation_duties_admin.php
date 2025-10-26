@@ -1,41 +1,56 @@
 <?php
 // view_invigilation_duties.php
 
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$user = getenv('DB_USER') ?: 'root';
-$pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_ROOM') ?: 'room_allocation';
-
-// Create DB connection
-$conn = new mysqli($host, $user, $pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
-}
+$env = getenv('RENDER') ? 'render' : 'local';
 
 $popupMessage = "";
 
-// Handle delete request securely
-if (isset($_GET['delete_id'])) {
-    $delete_id = intval($_GET['delete_id']);
+// Read delete request
+$delete_id = intval($_GET['delete_id'] ?? 0);
+
+// Connect to DB
+if ($env === 'local') {
+    $conn = new mysqli('localhost', 'root', '', 'room_allocation');
+    if ($conn->connect_error) die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
     if ($delete_id > 0) {
         $stmt = $conn->prepare("DELETE FROM faculty_assignments WHERE id = ?");
         $stmt->bind_param("i", $delete_id);
-        if ($stmt->execute()) {
-            $popupMessage = "Faculty duty deleted successfully!";
-        } else {
-            $popupMessage = "Error deleting record: " . $stmt->error;
-        }
+        if ($stmt->execute()) $popupMessage = "Faculty duty deleted successfully!";
+        else $popupMessage = "Error deleting record: " . $stmt->error;
         $stmt->close();
     }
-}
 
-// Fetch all assigned duties
-$sql = "SELECT a.id, g.classroom_name, a.faculty_name, a.email_id, a.assigned_at
+    $sql = "SELECT a.id, g.classroom_name, a.faculty_name, a.email_id, a.assigned_at
+            FROM faculty_assignments a
+            JOIN generated_classrooms g ON a.classroom_id = g.id
+            ORDER BY g.classroom_name, a.faculty_name";
+    $result = $conn->query($sql);
+
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_ROOM') ?: 'room_allocation';
+
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h2 style='color:red;'>PostgreSQL connection failed</h2>");
+
+    if ($delete_id > 0) {
+        $res = pg_query_params($conn, "DELETE FROM faculty_assignments WHERE id=$1", [$delete_id]);
+        $popupMessage = $res ? "Faculty duty deleted successfully!" : "Error deleting record!";
+    }
+
+    $res = pg_query($conn, "
+        SELECT a.id, g.classroom_name, a.faculty_name, a.email_id, a.assigned_at
         FROM faculty_assignments a
         JOIN generated_classrooms g ON a.classroom_id = g.id
-        ORDER BY g.classroom_name, a.faculty_name";
+        ORDER BY g.classroom_name, a.faculty_name
+    ");
 
-$result = $conn->query($sql);
+    $result = [];
+    while ($row = pg_fetch_assoc($res)) $result[] = $row;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

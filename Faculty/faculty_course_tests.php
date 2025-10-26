@@ -8,33 +8,51 @@ if (!isset($_SESSION['faculty_user'])) {
 $faculty_mail = $_SESSION['faculty_user'];
 $course_code = $_GET['course_code'] ?? '';
 
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_ROOM') ?: 'room_allocation';
-
 if (empty($course_code)) {
     echo "<p style='color:red;'>Invalid course selected.</p>";
     exit;
 }
 
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
+
 // Database connection
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+if ($env === 'local') {
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'room_allocation';
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_ROOM') ?: 'room_allocation';
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("PostgreSQL connection failed");
 }
 
 // Fetch exams published by this faculty for this course
-$sql = "SELECT t.test_id, t.test_title, t.test_date, t.available_from, t.duration, t.test_type, p.course_code
-        FROM tests t
-        INNER JOIN published_exam p ON t.test_id = p.test_id
-        WHERE p.course_code = ? AND p.faculty_mail = ?
-        ORDER BY t.test_date DESC";
-
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("ss", $course_code, $faculty_mail);
-$stmt->execute();
-$result = $stmt->get_result();
+if ($env === 'local') {
+    $sql = "SELECT t.test_id, t.test_title, t.test_date, t.available_from, t.duration, t.test_type, p.course_code
+            FROM tests t
+            INNER JOIN published_exam p ON t.test_id = p.test_id
+            WHERE p.course_code = ? AND p.faculty_mail = ?
+            ORDER BY t.test_date DESC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ss", $course_code, $faculty_mail);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    $sql = "SELECT t.test_id, t.test_title, t.test_date, t.available_from, t.duration, t.test_type, p.course_code
+            FROM tests t
+            INNER JOIN published_exam p ON t.test_id = p.test_id
+            WHERE p.course_code = $1 AND p.faculty_mail = $2
+            ORDER BY t.test_date DESC";
+    $result = pg_query_params($conn, $sql, [$course_code, $faculty_mail]);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

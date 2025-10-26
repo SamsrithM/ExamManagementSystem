@@ -10,19 +10,51 @@ if (!isset($_SESSION['admin_user'])) {
     exit;
 }
 
-// Render environment DB connection
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_ADMIN') ?: 'admin_data';
-
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
-
 $admin_username = $_SESSION['admin_user'];
+$admin = [];
+$photoFile = "https://imgs.search.brave.com/pkPyTQFTOVFQw7Hki6hg6cgY5FPZ3UzkpUMsnfiuznQ/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/dmVjdG9yc3RvY2su/Y29tL2kvNTAwcC80/MS85MC9hdmF0YXIt/ZGVmYXVsdC11c2Vy/LXByb2ZpbGUtaWNv/bi1zaW1wbGUtZmxh/dC12ZWN0b3ItNTcy/MzQxOTAuanBn";
 
-// Handle photo upload
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
+
+if ($env === 'local') {
+    // MySQL connection for XAMPP
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'admin_data';
+
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
+
+    // Fetch admin data
+    $stmt = $conn->prepare("SELECT admin_username, email, photo FROM admin WHERE admin_username=?");
+    $stmt->bind_param("s", $admin_username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows === 1) $admin = $result->fetch_assoc();
+    $stmt->close();
+
+} else {
+    // PostgreSQL connection for Render
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_ADMIN');
+
+    $conn_string = "host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass";
+    $conn = pg_connect($conn_string);
+    if (!$conn) die("Database connection failed.");
+
+    // Fetch admin data
+    $query = "SELECT admin_username, email, photo FROM admin WHERE admin_username=$1";
+    $result = pg_query_params($conn, $query, [$admin_username]);
+    $admin = pg_fetch_assoc($result);
+}
+
+// Handle photo upload (only for MySQL for simplicity)
+if ($env === 'local' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
     if ($_FILES['photo']['error'] === 0) {
         $file_name = $_FILES['photo']['name'];
         $file_tmp = $_FILES['photo']['tmp_name'];
@@ -55,26 +87,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
     }
 }
 
-// Fetch admin data
-$stmt = $conn->prepare("SELECT admin_username, email, photo FROM admin WHERE admin_username=?");
-$stmt->bind_param("s", $admin_username);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows === 1) {
-    $admin = $result->fetch_assoc();
-} else {
-    die("Admin data not found.");
+// Set photo path
+if (!empty($admin['photo'])) {
+    if ($env === 'local') $photoFile = file_exists('uploads/'.$admin['photo']) ? 'uploads/'.$admin['photo'] : $photoFile;
+    else $photoFile = $admin['photo']; // Assume photo path in PostgreSQL is absolute or URL
 }
 
-$conn->close();
-
-// Default photo logic
-$defaultPhoto = "https://imgs.search.brave.com/pkPyTQFTOVFQw7Hki6hg6cgY5FPZ3UzkpUMsnfiuznQ/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/dmVjdG9yc3RvY2su/Y29tL2kvNTAwcC80/MS85MC9hdmF0YXIt/ZGVmYXVsdC11c2Vy/LXByb2ZpbGUtaWNv/bi1zaW1wbGUtZmxh/dC12ZWN0b3ItNTcy/MzQxOTAuanBn";
-$photoFile = !empty($admin['photo']) && file_exists('uploads/'.$admin['photo']) 
-             ? 'uploads/'.$admin['photo'] 
-             : $defaultPhoto;
+// Close connection
+if (!empty($conn)) {
+    if ($env === 'local') $conn->close();
+    else pg_close($conn);
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

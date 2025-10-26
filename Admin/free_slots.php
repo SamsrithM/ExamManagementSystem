@@ -7,15 +7,29 @@ if (!isset($_SESSION['admin_user'])) {
     exit;
 }
 
-// Database connection
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('DB_ROOM') ?: 'room_allocation';
+// Detect environment
+$env = getenv('RENDER') ? 'render' : 'local';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
+// DB connection
+if ($env === 'local') {
+    $db_host = 'localhost';
+    $db_user = 'root';
+    $db_pass = '';
+    $db_name = 'room_allocation';
+
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    if ($conn->connect_error) {
+        die("<h2 style='color:red;'>Connection failed: " . $conn->connect_error . "</h2>");
+    }
+} else {
+    $db_host = getenv('DB_HOST');
+    $db_port = getenv('DB_PORT') ?: '5432';
+    $db_user = getenv('DB_USER');
+    $db_pass = getenv('DB_PASS');
+    $db_name = getenv('DB_ROOM') ?: 'room_allocation';
+
+    $conn = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+    if (!$conn) die("<h2 style='color:red;'>PostgreSQL Connection failed.</h2>");
 }
 
 $notification = "";
@@ -31,12 +45,15 @@ if (isset($_POST['submit_slot'])) {
     $max_capacity = intval($_POST['max_capacity']);
     $slot_time = "$slot_start - $slot_end";
 
-    $stmt = $conn->prepare(
-        "INSERT INTO free_slots (exam_type, slot_date, slot_time, max_capacity) VALUES (?, ?, ?, ?)"
-    );
-    $stmt->bind_param("sssi", $exam_type, $slot_date, $slot_time, $max_capacity);
-    $stmt->execute();
-    $stmt->close();
+    if ($env === 'local') {
+        $stmt = $conn->prepare("INSERT INTO free_slots (exam_type, slot_date, slot_time, max_capacity) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("sssi", $exam_type, $slot_date, $slot_time, $max_capacity);
+        $stmt->execute();
+        $stmt->close();
+    } else {
+        $stmt = pg_prepare($conn, "insert_slot", "INSERT INTO free_slots (exam_type, slot_date, slot_time, max_capacity) VALUES ($1, $2, $3, $4)");
+        pg_execute($conn, "insert_slot", [$exam_type, $slot_date, $slot_time, $max_capacity]);
+    }
 
     $notification = "✅ Slot added successfully!";
 }
@@ -46,23 +63,33 @@ if (isset($_POST['submit_slot'])) {
 // ==========================
 if (isset($_GET['delete'])) {
     $delete_id = intval($_GET['delete']);
-    $conn->query("DELETE FROM faculty_slot_selection WHERE slot_id=$delete_id"); // remove dependencies
-    $conn->query("DELETE FROM free_slots WHERE id=$delete_id");
+
+    if ($env === 'local') {
+        $conn->query("DELETE FROM faculty_slot_selection WHERE slot_id=$delete_id");
+        $conn->query("DELETE FROM free_slots WHERE id=$delete_id");
+    } else {
+        pg_query_params($conn, "DELETE FROM faculty_slot_selection WHERE slot_id=$1", [$delete_id]);
+        pg_query_params($conn, "DELETE FROM free_slots WHERE id=$1", [$delete_id]);
+    }
+
     $notification = "🗑️ Slot and related selections deleted successfully!";
 }
 
 // ==========================
-// Fetch all slots (for viewing)
+// Fetch all slots
 // ==========================
 $slots = [];
-$result = $conn->query("SELECT * FROM free_slots ORDER BY slot_date ASC");
-if ($result && $result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $slots[] = $row;
-    }
+if ($env === 'local') {
+    $result = $conn->query("SELECT * FROM free_slots ORDER BY slot_date ASC");
+    while ($row = $result->fetch_assoc()) $slots[] = $row;
+} else {
+    $result = pg_query($conn, "SELECT * FROM free_slots ORDER BY slot_date ASC");
+    while ($row = pg_fetch_assoc($result)) $slots[] = $row;
 }
 
-$conn->close();
+// Close connection
+if ($env === 'local') $conn->close();
+else pg_close($conn);
 ?>
 
 <!DOCTYPE html>

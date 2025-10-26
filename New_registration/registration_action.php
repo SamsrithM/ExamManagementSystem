@@ -6,7 +6,7 @@ header('Content-Type: text/html; charset=UTF-8');
 $host = getenv('DB_HOST') ?: '127.0.0.1';
 $user = getenv('DB_USER') ?: 'root';
 $pass = getenv('DB_PASS') ?: '';
-$db_name = getenv('STUDENT_DB') ?: 'student_management';
+$db_name = getenv('DB_STUDENT') ?: 'student_management';
 
 // Connect to database
 $conn = new mysqli($host, $user, $pass, $db_name);

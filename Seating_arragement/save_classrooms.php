@@ -6,7 +6,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $servername = getenv('DB_HOST') ?: '127.0.0.1';
 $username   = getenv('DB_USER') ?: 'root';
 $password   = getenv('DB_PASS') ?: '';
-$dbname     = getenv('ROOM_DB') ?: 'room_allocation';
+$dbname     = getenv('DB_ROOM') ?: 'room_allocation';
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 $conn->set_charset("utf8");

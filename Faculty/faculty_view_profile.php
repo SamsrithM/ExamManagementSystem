@@ -6,31 +6,54 @@ if (!isset($_SESSION['faculty_user'])) {
     exit;
 }
 
-// DB connection using environment variables
-$db_host = getenv('DB_HOST') ?: 'mysql';
-$db_user = getenv('DB_USER') ?: 'root';
-$db_pass = getenv('DB_PASS') ?: '';
-$db_name   = getenv('DB_NAME') ?: 'new_registration_data';
+// Detect environment
+$is_render = getenv('RENDER') ? true : false;
 
-// Connect to faculty details database
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
+// DB credentials
+$db_host = getenv('DB_HOST') ?: ($is_render ? 'your_postgres_host' : 'localhost');
+$db_user = getenv('DB_USER') ?: ($is_render ? 'postgres' : 'root');
+$db_pass = getenv('DB_PASS') ?: '';
+$db_details = getenv('DB_NAME') ?: 'new_registration_data';
+$db_faculty = getenv('DB_FACULTY') ?: 'faculty_data';
 
 $faculty_email = $_SESSION['faculty_user'];
 
-// Fetch faculty data
-$stmt = $conn->prepare("SELECT first_name, last_name, gender, email, department, designation, photo FROM faculty_new_data WHERE email = ?");
-$stmt->bind_param("s", $faculty_email);
-$stmt->execute();
-$result = $stmt->get_result();
+// --- Database connection ---
+if ($is_render) {
+    // PostgreSQL
+    $conn = pg_connect("host=$db_details dbname=$db_details user=$db_user password=$db_pass");
+    if (!$conn) die("Connection failed: " . pg_last_error());
 
-if ($result->num_rows === 1) {
-    $faculty = $result->fetch_assoc();
+    $res = pg_prepare($conn, "faculty_query", "SELECT first_name, last_name, gender, email, department, designation, photo FROM faculty_new_data WHERE email=$1");
+    $res = pg_execute($conn, "faculty_query", [$faculty_email]);
+
+    if (pg_num_rows($res) === 1) {
+        $faculty = pg_fetch_assoc($res);
+    } else {
+        die("<h2 style='text-align:center; color:red;'>Faculty data not found for: $faculty_email</h2>");
+    }
+
+    pg_close($conn);
+
 } else {
-    die("<h2 style='text-align:center; color:red;'>Faculty data not found for: $faculty_email</h2>");
-}
+    // MySQL
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_details);
+    if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
 
-$conn->close();
+    $stmt = $conn->prepare("SELECT first_name, last_name, gender, email, department, designation, photo FROM faculty_new_data WHERE email = ?");
+    $stmt->bind_param("s", $faculty_email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 1) {
+        $faculty = $result->fetch_assoc();
+    } else {
+        die("<h2 style='text-align:center; color:red;'>Faculty data not found for: $faculty_email</h2>");
+    }
+
+    $stmt->close();
+    $conn->close();
+}
 
 // Photo path
 $defaultPhoto = "https://imgs.search.brave.com/pkPyTQFTOVFQw7Hki6hg6cgY5FPZ3UzkpUMsnfiuznQ/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/dmVjdG9yc3RvY2su/Y29tL2kvNTAwcC80/MS85MC9hdmF0YXIt/ZGVmYXVsdC11c2Vy/LXByb2ZpbGUtaWNv/bi1zaW1wbGUtZmxh/dC12ZWN0b3ItNTcy/MzQxOTAuanBn";
